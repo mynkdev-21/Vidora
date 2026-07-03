@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary"
+    android:gravity="center_horizontal"
+    android:paddingTop="60dp"
+    android:paddingHorizontal="28dp"
+    android:paddingBottom="28dp">
+
+    <!-- Logo -->
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="48dp"
+        android:src="@drawable/logo_wordmark"
+        android:scaleType="fitCenter"
+        android:layout_marginBottom="50dp"
+        android:layout_gravity="center"
+        android:contentDescription="Vidora" />
+
+    <!-- Title -->
+    <TextView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create account"
+        android:textSize="24sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="6dp" />
+
+    <TextView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Start watching and sharing for free"
+        android:textSize="14sp"
+        android:textColor="@color/text_muted"
+        android:layout_marginBottom="28dp" />
+
+    <!-- Error -->
+    <TextView
+        android:id="@+id/tv_error"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="13sp"
+        android:textColor="@color/red_light"
+        android:background="@drawable/bg_error"
+        android:padding="12dp"
+        android:visibility="gone"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Name -->
+    <TextView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Full name"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/et_name"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Your name"
+        android:textColorHint="@color/text_muted"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:background="@drawable/bg_input"
+        android:padding="14dp"
+        android:inputType="textPersonName"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Email -->
+    <TextView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Email address"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/et_email"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="you@example.com"
+        android:textColorHint="@color/text_muted"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:background="@drawable/bg_input"
+        android:padding="14dp"
+        android:inputType="textEmailAddress"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Password -->
+    <TextView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Password"
+        android:textSize="13sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/et_password"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Min. 6 characters"
+        android:textColorHint="@color/text_muted"
+        android:textColor="@color/text_primary"
+        android:textSize="15sp"
+        android:background="@drawable/bg_input"
+        android:padding="14dp"
+        android:inputType="textPassword"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Signup button -->
+    <TextView
+        android:id="@+id/btn_signup"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create Account"
+        android:textSize="16sp"
+        android:textColor="@color/white"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/bg_btn_purple"
+        android:padding="16dp"
+        android:gravity="center"
+        android:layout_marginBottom="14dp" />
+
+    <!-- Terms & Conditions -->
+    <TextView
+        android:id="@+id/tv_terms"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="By creating an account you agree to our Terms &amp; Conditions"
+        android:textSize="12sp"
+        android:textColor="@color/text_muted"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Go to login -->
+    <TextView
+        android:id="@+id/btn_go_login"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Already have an account? Log in"
+        android:textSize="13sp"
+        android:textColor="@color/purple_light"
+        android:layout_gravity="center" />
+
+</LinearLayout>

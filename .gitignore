@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+dist/
+uploads/
+firebase-service-account.json
+google-services*.json
+vidora-f17fa-firebase*.json
+*.zip
+.DS_Store
+.vscode/

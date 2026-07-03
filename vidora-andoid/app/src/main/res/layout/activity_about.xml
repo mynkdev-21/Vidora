@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="8dp"
+            android:background="@drawable/bg_icon_button"
+            android:contentDescription="Back" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="40dp">
+
+            <!-- Logo with glow -->
+            <FrameLayout
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="16dp">
+
+                <!-- Glow background -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/bg_about_glow" />
+
+                <!-- Logo -->
+                <ImageView
+                    android:layout_width="70dp"
+                    android:layout_height="70dp"
+                    android:layout_gravity="center"
+                    android:src="@mipmap/ic_launcher"
+                    android:contentDescription="Vidora" />
+            </FrameLayout>
+
+            <!-- App name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Vidora"
+                android:textSize="28sp"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Version -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="v1.0.0"
+                android:textSize="14sp"
+                android:textColor="@color/text_muted"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Connect with us label -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="CONNECT WITH US"
+                android:textSize="11sp"
+                android:textColor="@color/purple_light"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="14dp" />
+
+            <!-- Links card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_settings_card"
+                android:layout_marginBottom="28dp">
+
+                <!-- Website -->
+                <LinearLayout
+                    android:id="@+id/btn_website"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_home"
+                        android:tint="@color/purple_light" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Website" android:textSize="15sp" android:textColor="@color/text_primary" />
+                        <TextView android:id="@+id/tv_tag_website" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="vidora.app" android:textSize="11sp" android:textColor="@color/purple_light"
+                            android:background="@drawable/bg_about_tag" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="»" android:textSize="18sp" android:textColor="@color/text_dim" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/border" android:layout_marginHorizontal="16dp" />
+
+                <!-- YouTube -->
+                <LinearLayout
+                    android:id="@+id/btn_youtube"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_play"
+                        android:tint="@color/purple_light" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="YouTube" android:textSize="15sp" android:textColor="@color/text_primary" />
+                        <TextView android:id="@+id/tv_tag_youtube" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="@vidora" android:textSize="11sp" android:textColor="@color/purple_light"
+                            android:background="@drawable/bg_about_tag" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="»" android:textSize="18sp" android:textColor="@color/text_dim" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/border" android:layout_marginHorizontal="16dp" />
+
+                <!-- Telegram -->
+                <LinearLayout
+                    android:id="@+id/btn_telegram"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_share"
+                        android:tint="@color/purple_light" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Telegram" android:textSize="15sp" android:textColor="@color/text_primary" />
+                        <TextView android:id="@+id/tv_tag_telegram" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="@vidorasupport" android:textSize="11sp" android:textColor="@color/purple_light"
+                            android:background="@drawable/bg_about_tag" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="»" android:textSize="18sp" android:textColor="@color/text_dim" />
+                </LinearLayout>
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/border" android:layout_marginHorizontal="16dp" />
+
+                <!-- Instagram -->
+                <LinearLayout
+                    android:id="@+id/btn_instagram"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:src="@drawable/ic_instagram"
+                        android:tint="@color/purple_light" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:layout_marginStart="14dp">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Instagram" android:textSize="15sp" android:textColor="@color/text_primary" />
+                        <TextView android:id="@+id/tv_tag_instagram" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="@vidora.app" android:textSize="11sp" android:textColor="@color/purple_light"
+                            android:background="@drawable/bg_about_tag" android:paddingHorizontal="8dp" android:paddingVertical="2dp" android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="»" android:textSize="18sp" android:textColor="@color/text_dim" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Made with love -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Made with ❤️ by Vidora"
+                android:textSize="13sp"
+                android:textColor="@color/text_muted" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

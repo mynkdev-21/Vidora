@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="8dp"
+            android:background="@drawable/bg_icon_button"
+            android:contentDescription="Back" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingHorizontal="24dp"
+            android:paddingBottom="40dp">
+
+            <!-- Crown icon -->
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_crown"
+                android:tint="@color/purple_light"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Go Premium"
+                android:textSize="26sp"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-medium"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enjoy ad-free experience"
+                android:textSize="14sp"
+                android:textColor="@color/text_muted"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Monthly plan -->
+            <LinearLayout
+                android:id="@+id/btn_monthly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_settings_card"
+                android:padding="20dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Monthly" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="3-day free trial" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="₹199/mo" android:textSize="18sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- 3-Month plan -->
+            <LinearLayout
+                android:id="@+id/btn_quarterly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_settings_card"
+                android:padding="20dp"
+                android:layout_marginBottom="12dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="3 Months" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="5-day free trial · Save 17%" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="₹499" android:textSize="18sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Yearly plan -->
+            <LinearLayout
+                android:id="@+id/btn_yearly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_btn_purple"
+                android:padding="20dp"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="Yearly" android:textSize="16sp" android:textColor="@color/white" android:fontFamily="sans-serif-medium" />
+                        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                            android:text="7-day free trial · Save 37%" android:textSize="12sp" android:textColor="#CCFFFFFF" android:layout_marginTop="2dp" />
+                    </LinearLayout>
+
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="₹1499/yr" android:textSize="18sp" android:textColor="@color/white" android:fontFamily="sans-serif-medium" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Features -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="WHAT YOU GET"
+                android:textSize="11sp"
+                android:textColor="@color/purple_light"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="12dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_settings_card"
+                android:padding="16dp"
+                android:layout_marginBottom="24dp">
+
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="✓  No ads anywhere in the app" android:textSize="13sp" android:textColor="@color/text_primary" android:layout_marginBottom="10dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="✓  Instant file unlock (no rewarded ads)" android:textSize="13sp" android:textColor="@color/text_primary" android:layout_marginBottom="10dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="✓  Download without watching ads" android:textSize="13sp" android:textColor="@color/text_primary" android:layout_marginBottom="10dp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="✓  Support Vidora development" android:textSize="13sp" android:textColor="@color/text_primary" />
+            </LinearLayout>
+
+            <!-- Already premium -->
+            <TextView
+                android:id="@+id/tv_premium_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="You're already Premium! ✨"
+                android:textSize="14sp"
+                android:textColor="@color/green_light"
+                android:fontFamily="sans-serif-medium"
+                android:visibility="gone" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancel anytime from Google Play"
+                android:textSize="11sp"
+                android:textColor="@color/text_muted"
+                android:layout_marginTop="12dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

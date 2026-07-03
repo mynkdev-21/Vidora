@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingVertical="14dp"
+    android:paddingHorizontal="4dp">
+
+    <!-- File icon -->
+    <FrameLayout
+        android:layout_width="42dp"
+        android:layout_height="42dp">
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_icon_purple_sm" />
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_play"
+            android:tint="@color/purple_light"
+            android:contentDescription="File" />
+    </FrameLayout>
+
+    <!-- File info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="14dp">
+
+        <TextView
+            android:id="@+id/tv_history_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="File name"
+            android:textSize="14sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <TextView
+            android:id="@+id/tv_history_meta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Today · 8:45 PM · 8.3 MB"
+            android:textSize="12sp"
+            android:textColor="@color/text_muted"
+            android:layout_marginTop="3dp" />
+    </LinearLayout>
+</LinearLayout>

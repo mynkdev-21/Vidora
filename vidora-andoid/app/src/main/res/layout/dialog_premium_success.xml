@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:paddingHorizontal="32dp"
+    android:paddingTop="40dp"
+    android:paddingBottom="32dp"
+    android:background="@drawable/bg_premium_dialog">
+
+    <!-- Crown with glow -->
+    <FrameLayout
+        android:layout_width="80dp"
+        android:layout_height="80dp"
+        android:layout_marginBottom="20dp">
+
+        <View
+            android:id="@+id/glow"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_about_glow" />
+
+        <ImageView
+            android:id="@+id/iv_crown"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_crown"
+            android:tint="#fbbf24" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to Premium!"
+        android:textSize="22sp"
+        android:textColor="@color/text_primary"
+        android:fontFamily="sans-serif-medium"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="You now have an ad-free experience.\nEnjoy Vidora without interruptions."
+        android:textSize="13sp"
+        android:textColor="@color/text_muted"
+        android:gravity="center"
+        android:lineSpacingExtra="3dp"
+        android:layout_marginBottom="28dp" />
+
+    <TextView
+        android:id="@+id/btn_continue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Continue"
+        android:textSize="15sp"
+        android:textColor="@color/white"
+        android:fontFamily="sans-serif-medium"
+        android:background="@drawable/bg_premium_card"
+        android:padding="16dp"
+        android:gravity="center" />
+
+</LinearLayout>

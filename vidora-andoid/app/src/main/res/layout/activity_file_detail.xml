@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/bg_primary">
+
+    <!-- Header -->
+    <FrameLayout
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="14dp">
+
+        <ImageView
+            android:id="@+id/btn_back"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_gravity="start|center_vertical"
+            android:src="@drawable/ic_arrow_back"
+            android:padding="8dp"
+            android:background="@drawable/bg_icon_button"
+            android:contentDescription="Back" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="File Details"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium" />
+    </FrameLayout>
+
+    <!-- Divider -->
+    <View
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/border" />
+
+    <ScrollView
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center_horizontal"
+            android:paddingHorizontal="24dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="24dp">
+
+            <!-- Banner Ad above thumbnail - ID loaded from API -->
+            <FrameLayout
+                android:id="@+id/ad_banner_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
+
+            <!-- Thumbnail / Icon area -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="180dp"
+                android:layout_height="180dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="24dp"
+                app:cardBackgroundColor="@color/purple_surface"
+                app:cardElevation="0dp">
+
+                <FrameLayout
+                    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <!-- Thumbnail image (loaded by Glide) -->
+                    <ImageView
+                        android:id="@+id/iv_file_thumbnail"
+                        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:scaleType="centerCrop"
+                        android:visibility="gone"
+                        android:contentDescription="Thumbnail" />
+
+                    <!-- Fallback icon (shown when no thumbnail) -->
+                    <ImageView
+                        android:id="@+id/iv_file_icon"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_play"
+                        android:tint="@color/purple_primary"
+                        android:contentDescription="File type" />
+                </FrameLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- File name -->
+            <TextView
+                android:id="@+id/tv_file_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading…"
+                android:textSize="18sp"
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Type + Size subtitle -->
+            <TextView
+                android:id="@+id/tv_file_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="— • —"
+                android:textSize="13sp"
+                android:textColor="@color/text_muted"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Scroll hint -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Scroll down to open the file"
+                android:textSize="12sp"
+                android:textColor="@color/text_dim"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Info cards row 1: Size + Type -->
+            <LinearLayout
+                android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="10dp">
+
+                <!-- Size -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_info_card"
+                    android:padding="16dp"
+                    android:layout_marginEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_home"
+                        android:tint="@color/purple_light"
+                        android:layout_marginEnd="10dp"
+                        android:contentDescription="Size" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Size"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_muted" />
+
+                        <TextView
+                            android:id="@+id/tv_file_size"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Type -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_info_card"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_play"
+                        android:tint="@color/purple_light"
+                        android:layout_marginEnd="10dp"
+                        android:contentDescription="Type" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Type"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_muted" />
+
+                        <TextView
+                            android:id="@+id/tv_file_type"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Info cards row 2: Uploaded + Uploader -->
+            <LinearLayout
+                android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="28dp">
+
+                <!-- Views -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_info_card"
+                    android:padding="16dp"
+                    android:layout_marginEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_search"
+                        android:tint="@color/purple_light"
+                        android:layout_marginEnd="10dp"
+                        android:contentDescription="Views" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Views"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_muted" />
+
+                        <TextView
+                            android:id="@+id/tv_views"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Uploader -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_info_card"
+                    android:padding="16dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_person"
+                        android:tint="@color/purple_light"
+                        android:layout_marginEnd="10dp"
+                        android:contentDescription="Uploader" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Uploader"
+                            android:textSize="11sp"
+                            android:textColor="@color/text_muted" />
+
+                        <TextView
+                            android:id="@+id/tv_uploader"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="—"
+                            android:textSize="14sp"
+                            android:textColor="@color/text_primary"
+                            android:fontFamily="sans-serif-medium" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Action buttons row: Bookmark, Share, Save to Cloud -->
+            <LinearLayout
+                android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="28dp">
+
+                <!-- Bookmark -->
+                <LinearLayout
+                    android:id="@+id/btn_bookmark"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <FrameLayout
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_action_circle">
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_bookmark"
+                            android:tint="@color/purple_light"
+                            android:contentDescription="Bookmark" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Bookmark"
+                        android:textSize="11sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <!-- Share -->
+                <LinearLayout
+                    android:id="@+id/btn_share"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <FrameLayout
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_action_circle">
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_share"
+                            android:tint="@color/purple_light"
+                            android:contentDescription="Share" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Share"
+                        android:textSize="11sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <!-- Save to Cloud -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="center">
+
+                    <FrameLayout
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_action_circle">
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_add"
+                            android:tint="@color/purple_light"
+                            android:contentDescription="Save" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Save to Cloud"
+                        android:textSize="11sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Banner Ad above unlock button - ID loaded from API -->
+            <FrameLayout
+                android:id="@+id/ad_banner_unlock"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone" />
+
+            <!-- Unlock File button -->
+            <TextView
+                android:id="@+id/btn_unlock"
+                android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="▶  Unlock File"
+                android:textSize="16sp"
+                android:textColor="@color/white"
+                android:fontFamily="sans-serif-medium"
+                android:background="@drawable/bg_btn_purple"
+                android:padding="18dp"
+                android:gravity="center"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Subtitle -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Unlock file is supported by ads"
+                android:textSize="11sp"
+                android:textColor="@color/text_dim"
+                android:layout_gravity="center" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Bottom Navigation -->
+    <include layout="@layout/layout_bottom_nav" />
+
+</LinearLayout>

@@ -1,0 +1,37 @@
+{
+  "name": "videora-backend",
+  "version": "1.0.0",
+  "description": "Videora secure REST API backend",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "bot": "node src/bot/index.js",
+    "db:migrate": "node src/db/migrate.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1057.0",
+    "axios": "^1.16.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "express-validator": "^7.1.0",
+    "firebase-admin": "^13.10.0",
+    "form-data": "^4.0.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mime-types": "^3.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "mysql2": "^3.10.1",
+    "node-telegram-bot-api": "^0.67.0",
+    "nodemailer": "^8.0.10",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  }
+}

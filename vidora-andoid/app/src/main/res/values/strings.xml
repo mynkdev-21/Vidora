@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Vidora</string>
+    <string name="tagline">Watch. Share. Anytime.</string>
+    <string name="paste_link">Paste a video link</string>
+    <string name="paste_subtitle">Tap to paste &amp; play instantly</string>
+    <string name="trending_now">Trending now</string>
+    <string name="search_hint">Search videos, creators…</string>
+    <string name="play_video">Play video</string>
+    <string name="paste_from_clipboard">Paste from clipboard</string>
+    <string name="sign_out">Sign out</string>
+    <string name="settings">Settings</string>
+</resources>

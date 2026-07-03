@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary">
+
+    <!-- Top bar -->
+    <LinearLayout
+        android:id="@+id/top_bar"
+        android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="20dp"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <ImageView
+                android:layout_width="160dp"
+                android:layout_height="38dp"
+                android:src="@drawable/logo_wordmark"
+                android:scaleType="fitStart"
+                android:contentDescription="Vidora" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/btn_search_top"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@drawable/ic_search"
+            android:padding="9dp"
+            android:background="@drawable/bg_icon_button"
+            android:layout_marginEnd="10dp"
+            android:visibility="gone"
+            android:contentDescription="Search" />
+
+        <ImageView
+            android:id="@+id/btn_notifications_top"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@drawable/ic_notifications"
+            android:padding="9dp"
+            android:background="@drawable/bg_icon_button"
+            android:layout_marginEnd="10dp"
+            android:contentDescription="Notifications" />
+
+        <ImageView
+            android:id="@+id/btn_profile_top"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:src="@drawable/ic_person"
+            android:padding="9dp"
+            android:background="@drawable/bg_icon_button_purple"
+            android:contentDescription="Profile" />
+    </LinearLayout>
+
+    <!-- Email verification banner -->
+    <LinearLayout
+        android:id="@+id/banner_verify"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_verify_banner"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/top_bar">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@drawable/ic_mail_outline"
+            android:tint="#fbbf24"
+            android:layout_marginEnd="10dp" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Verify your email to unlock all features"
+            android:textSize="12sp"
+            android:textColor="#fbbf24" />
+
+        <TextView
+            android:id="@+id/btn_verify_now"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Verify"
+            android:textSize="11sp"
+            android:textColor="#fbbf24"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/bg_verify_btn"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp" />
+    </LinearLayout>
+
+    <!-- Link input card -->
+    <LinearLayout
+        android:id="@+id/card_link_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/bg_input"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginTop="4dp"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="14dp"
+        app:layout_constraintTop_toBottomOf="@id/banner_verify">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_link"
+            android:tint="@color/text_muted"
+            android:contentDescription="Link" />
+
+        <EditText
+            android:id="@+id/et_link"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Enter link here …"
+            android:textColorHint="@color/text_muted"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:background="@null"
+            android:inputType="textUri"
+            android:singleLine="true"
+            android:layout_marginStart="12dp" />
+
+        <ImageView
+            android:id="@+id/btn_play"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:src="@drawable/ic_search"
+            android:tint="@color/purple_light"
+            android:contentDescription="Go" />
+    </LinearLayout>
+
+    <!-- Banner Ad container (AdView created programmatically) -->
+    <FrameLayout
+        android:id="@+id/ad_banner_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        app:layout_constraintTop_toBottomOf="@id/card_link_input" />
+
+    <!-- Recent History header -->
+    <LinearLayout
+        android:id="@+id/layout_history_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="10dp"
+        app:layout_constraintTop_toBottomOf="@id/ad_banner_container">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Recent History"
+            android:textSize="16sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/btn_clear_history"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Clear All"
+            android:textSize="13sp"
+            android:textColor="@color/purple_light" />
+    </LinearLayout>
+
+    <!-- Recent history list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_history"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:paddingHorizontal="20dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/layout_history_header"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
+
+    <!-- FAB (paste from clipboard) -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_paste"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="20dp"
+        android:layout_marginBottom="92dp"
+        android:src="@drawable/ic_clipboard"
+        android:contentDescription="Paste"
+        app:backgroundTint="@color/purple_primary"
+        app:tint="@color/white"
+        app:fabSize="normal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Offline banner -->
+    <LinearLayout
+        android:id="@+id/layout_offline"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingVertical="40dp"
+        android:paddingHorizontal="24dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/card_link_input"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_wifi_off"
+            android:tint="@color/text_muted"
+            android:layout_marginBottom="14dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You're offline"
+            android:textSize="18sp"
+            android:textColor="@color/text_primary"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Check your internet connection"
+            android:textSize="13sp"
+            android:textColor="@color/text_muted"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:id="@+id/btn_view_downloads"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Downloads"
+            android:textSize="14sp"
+            android:textColor="@color/white"
+            android:fontFamily="sans-serif-medium"
+            android:background="@drawable/bg_btn_purple"
+            android:paddingHorizontal="28dp"
+            android:paddingVertical="14dp" />
+    </LinearLayout>
+
+    <!-- Bottom Navigation -->
+    <include layout="@layout/layout_bottom_nav"
+        android:id="@+id/bottom_nav"
+        android:layout_width="match_parent"
+        android:layout_height="76dp"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
