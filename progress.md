@@ -1,10 +1,7 @@
 # Vidora — Project Progress
 
 > **Vidora** — File hosting & monetization platform. Creators upload, share links, earn from views. Consumers watch via Android app.
-> 
-> **Development Cost:** ~2400 tokens (AI-assisted development with Kiro)
 
----
 
 ## ✅ Backend (Node.js + Express + MySQL)
 
