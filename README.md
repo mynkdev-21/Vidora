@@ -8,27 +8,63 @@
 ![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
 ![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri-24C8D8?style=flat&logo=tauri&logoColor=white)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white)
 
 ---
 
 ## 📱 Overview
 
-Vidora is a complete video hosting and monetisation platform built for content creators and OTT startups. Designed, built, and deployed solo — from backend architecture to Android app to web dashboard.
+Vidora is a complete video hosting and monetisation platform built for content creators and OTT startups. Creators upload files, share links, and earn from views. Consumers watch via Android app, web, or desktop.
+
+Designed, built, and deployed **100% solo** — from backend architecture to Android app to web dashboard to desktop app.
 
 ---
 
 ## ✨ Features
 
-- 🔐 OTP-based authentication with email verification
-- 📹 Video upload, streaming, and management
-- 💳 Three-tier Google Play subscription (Basic · Pro · Premium)
-- 📊 Real-time live view counts via Socket.IO
-- 📱 Native Android app with ExoPlayer playback
-- 🖥️ Desktop app built with Tauri
-- 🌐 Web dashboard for content management
-- 🔔 Firebase push notifications
-- 💰 AdMob ad integration
-- 👤 User profiles and content management
+### 🔐 Auth & Users
+- OTP-based authentication with email verification
+- JWT access + refresh token rotation
+- Referral system, banned user detection
+- Avatar upload, profile management
+
+### 📹 Video & Files
+- Video upload with auto thumbnail (FFmpeg)
+- Streaming with range support (local + cloud)
+- Copy Files (Vidora to Vidora) — no storage duplication
+- Share tokens, view count anti-fraud (1 view/hour/IP)
+- Soft delete — earnings preserved on file deletion
+
+### 💰 Monetisation
+- Dynamic earning rate per view
+- Minimum payout system with referral bonuses
+- Three-tier Google Play subscription (₹199/mo · ₹499/3mo · ₹1499/yr)
+- Dynamic AdMob IDs from admin panel (Banner, Interstitial, Rewarded)
+
+### 📡 Real-time & Notifications
+- Firebase FCM push notifications
+- In-app notification bell with unread count
+- Subscriber notifications when creator uploads
+- Socket.IO live view counts
+
+### 👥 Creator & Subscription System
+- Subscribe/Unsubscribe from any creator
+- Bell toggle per creator (notify on/off)
+- YouTube-style feed — subscribed creators' latest uploads
+- Creator profile with avatar, stats, Latest/Popular sort
+
+### ☁️ Cloud Storage
+- Storage Adapter Pattern — pluggable providers
+- Supports: Local · Cloudflare R2 · Backblaze B2 · BunnyCDN · Custom S3
+- Currently active: **Backblaze B2**
+- Admin can switch providers with one click
+
+### 🤖 Telegram Bot
+- Link account via API key
+- Send file → upload to Vidora → get share URL
+- `/copy <link>` — copy any Vidora file to your account
+- Auto FCM push to subscribers on bot upload
 
 ---
 
@@ -36,16 +72,16 @@ Vidora is a complete video hosting and monetisation platform built for content c
 
 | Layer | Technology |
 |---|---|
-| Backend | Node.js, Express.js |
-| Database | MySQL |
-| Mobile | Kotlin, ExoPlayer, Retrofit |
-| Desktop | Tauri, Rust |
-| Web Dashboard | React, TypeScript, Vite |
-| Auth | OTP, Nodemailer |
-| Real-time | Socket.IO |
-| Notifications | Firebase FCM |
-| Monetisation | Google Play Billing, AdMob |
-| Deployment | Nginx, Linux Server |
+| Backend | Node.js 24, Express 4 |
+| Database | MySQL 9 — 18 tables |
+| Frontend | React 19, TanStack Router, Tailwind CSS 4 |
+| Mobile | Java, ExoPlayer, Retrofit, Glide, AdMob, Firebase, Play Billing |
+| Desktop | Tauri v2 (Rust), GitHub Actions CI/CD |
+| Telegram | node-telegram-bot-api |
+| Storage | Backblaze B2 (active), supports R2/Bunny/S3/Local |
+| Auth | JWT, OTP, Nodemailer |
+| Real-time | Socket.IO, Firebase FCM |
+| CI/CD | GitHub Actions (auto-build Windows .exe + Mac .dmg) |
 
 ---
 
@@ -53,7 +89,7 @@ Vidora is a complete video hosting and monetisation platform built for content c
 
 ```
 Vidora/
-├── backend/                  # Node.js + Express API
+├── backend/                  # Node.js + Express API (18 tables)
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── routes/
@@ -62,9 +98,9 @@ Vidora/
 │   ├── uploads/
 │   ├── .env.example
 │   └── package.json
-├── vidora-andoid/            # Android app (Kotlin)
-├── vidora-desktop/           # Desktop app (Tauri + Rust)
-├── web_dashboard/            # Web dashboard (React + TypeScript)
+├── vidora-andoid/            # Android app (Java + Firebase)
+├── vidora-desktop/           # Desktop app (Tauri v2 + Rust)
+├── web_dashboard/            # Creator dashboard (React 19 + TypeScript)
 │   ├── src/
 │   ├── public/
 │   └── package.json
@@ -78,18 +114,11 @@ Vidora/
 ### Backend
 
 ```bash
-# Clone the repo
 git clone https://github.com/mynkdev-21/Vidora.git
-
-# Install dependencies
 cd Vidora/backend
 npm install
-
-# Setup environment
 cp .env.example .env
-# Fill in your DB, Firebase, and SMTP credentials
-
-# Run server
+# Fill in DB, Firebase, SMTP, and storage credentials
 npm start
 ```
 
@@ -116,20 +145,46 @@ cargo tauri dev
 
 ## ⚙️ Environment Variables
 
-Create `.env` in `/backend`:
-
 ```env
 PORT=3000
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=
-DB_NAME=vidora
+DB_NAME=videora
 JWT_SECRET=
 SMTP_HOST=
 SMTP_USER=
 SMTP_PASS=
 FIREBASE_PROJECT_ID=
+BASE_URL=
+FRONTEND_URL=
 ```
+
+---
+
+## 📊 Scaling Roadmap
+
+| Users | Infrastructure | Cost |
+|---|---|---|
+| 1K | Current setup — fine | ₹0 |
+| 5K | Redis cache (trending, profiles) | €5/mo |
+| 20K | PM2 cluster + MySQL indexes | €0 |
+| 50K | MySQL Read Replica + Cloudflare CDN | €20/mo |
+| 1L+ | Load Balancer + 3 Node instances + Redis Cluster | €60/mo |
+
+```
+Cloudflare CDN → Load Balancer → Node ×3 → Redis + MySQL Primary + Replicas → B2 Storage
+```
+
+---
+
+## 🔲 Pending
+
+- [ ] Cloudflare CDN setup
+- [ ] Video quality selector
+- [ ] Production deployment (domain, SSL, real AdMob IDs)
+- [ ] Play Store listing + Billing products setup
+- [ ] Apple Developer account for signed Mac app
 
 ---
 
