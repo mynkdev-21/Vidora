@@ -1,95 +1,236 @@
-# Vidora 🎬
+# 🎬 Vidora
 
-> A full-featured video hosting and monetisation platform — built solo from architecture to deployment.
+<h3 align="center">Video Hosting & Monetization Platform</h3>
 
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white)
-![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat&logo=kotlin&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat&logo=mysql&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=flat&logo=firebase&logoColor=black)
-![Express](https://img.shields.io/badge/Express-000000?style=flat&logo=express&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
-![Tauri](https://img.shields.io/badge/Tauri-24C8D8?style=flat&logo=tauri&logoColor=white)
-![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=openjdk&logoColor=white)
+<p align="center">
+  A full-featured video platform for creators, publishers, and OTT startups — independently engineered from architecture to deployment.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Node.js-24-339933?style=for-the-badge&logo=nodedotjs&logoColor=white" alt="Node.js"/>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+  <img src="https://img.shields.io/badge/Android-Java-3DDC84?style=for-the-badge&logo=android&logoColor=white" alt="Android"/>
+  <img src="https://img.shields.io/badge/MySQL-9-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL"/>
+  <img src="https://img.shields.io/badge/Tauri-v2-24C8D8?style=for-the-badge&logo=tauri&logoColor=white" alt="Tauri"/>
+  <img src="https://img.shields.io/badge/License-MIT-16A34A?style=for-the-badge" alt="MIT License"/>
+</p>
+
+<p align="center">
+  <a href="#-overview">Overview</a> ·
+  <a href="#-features">Features</a> ·
+  <a href="#-screenshots">Screenshots</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="#-installation">Installation</a> ·
+  <a href="#-roadmap">Roadmap</a>
+</p>
 
 ---
 
-## 📱 Overview
+## 🚀 Overview
 
-Vidora is a complete video hosting and monetisation platform built for content creators and OTT startups. Creators upload files, share links, and earn from views. Consumers watch via Android app, web, or desktop.
+**Vidora** is a complete video hosting and monetization ecosystem designed for content creators, video publishers, and OTT startups.
 
-Designed, built, and deployed **100% solo** — from backend architecture to Android app to web dashboard to desktop app.
+It provides a unified platform where creators can upload videos, manage content, share files, grow subscribers, and generate revenue from views.
+
+Consumers can discover and watch content through Android, Web, and Desktop applications.
+
+The entire platform was independently designed and developed, covering backend architecture, database design, Android engineering, frontend development, desktop applications, storage infrastructure, and deployment automation.
+
+### Platform Highlights
+
+- 📱 Native Android application
+- 🌐 React-based creator dashboard
+- 🖥️ Cross-platform desktop application
+- ⚙️ REST API and real-time backend
+- ☁️ Multi-provider cloud storage architecture
+- 💰 Creator monetization and subscriptions
+- 🤖 Telegram upload automation
 
 ---
 
 ## ✨ Features
 
-### 🔐 Auth & Users
-- OTP-based authentication with email verification
-- JWT access + refresh token rotation
-- Referral system, banned user detection
-- Avatar upload, profile management
+### 🔐 Authentication & User Management
 
-### 📹 Video & Files
-- Video upload with auto thumbnail (FFmpeg)
-- Streaming with range support (local + cloud)
-- Copy Files (Vidora to Vidora) — no storage duplication
-- Share tokens, view count anti-fraud (1 view/hour/IP)
-- Soft delete — earnings preserved on file deletion
+- OTP-based authentication and email verification.
+- JWT access and refresh token rotation.
+- User profile and avatar management.
+- Referral system.
+- Account restriction and banned-user detection.
 
-### 💰 Monetisation
-- Dynamic earning rate per view
-- Minimum payout system with referral bonuses
-- Three-tier Google Play subscription (₹199/mo · ₹499/3mo · ₹1499/yr)
-- Dynamic AdMob IDs from admin panel (Banner, Interstitial, Rewarded)
+### 🎥 Video Hosting & Streaming
 
-### 📡 Real-time & Notifications
-- Firebase FCM push notifications
-- In-app notification bell with unread count
-- Subscriber notifications when creator uploads
-- Socket.IO live view counts
+- Video uploads with automatic thumbnail generation using FFmpeg.
+- HTTP Range-based video streaming.
+- Local and cloud storage support.
+- File sharing through unique share tokens.
+- File copying between Vidora accounts without duplicating stored files.
+- View-count fraud prevention with a one-view-per-hour-per-IP rule.
+- Soft deletion while preserving creator earnings records.
+
+### 💰 Creator Monetization
+
+- Dynamic earning rate per verified view.
+- Minimum payout threshold.
+- Referral-based earning bonuses.
+- Creator revenue tracking.
+- Google Play subscription plans:
+  - ₹199 / month
+  - ₹499 / 3 months
+  - ₹1,499 / year
+- Dynamic AdMob configuration from the administration panel.
 
 ### 👥 Creator & Subscription System
-- Subscribe/Unsubscribe from any creator
-- Bell toggle per creator (notify on/off)
-- YouTube-style feed — subscribed creators' latest uploads
-- Creator profile with avatar, stats, Latest/Popular sort
 
-### ☁️ Cloud Storage
-- Storage Adapter Pattern — pluggable providers
-- Supports: Local · Cloudflare R2 · Backblaze B2 · BunnyCDN · Custom S3
-- Currently active: **Backblaze B2**
-- Admin can switch providers with one click
+- Subscribe and unsubscribe from creators.
+- Individual notification preferences.
+- YouTube-style subscription feed.
+- Latest and Popular content sorting.
+- Creator profiles with avatars and statistics.
+- New upload notifications for subscribers.
 
-### 🤖 Telegram Bot
-- Link account via API key
-- Send file → upload to Vidora → get share URL
-- `/copy <link>` — copy any Vidora file to your account
-- Auto FCM push to subscribers on bot upload
+### 📡 Real-Time Communication
+
+- Socket.IO-powered live view counts.
+- Firebase Cloud Messaging.
+- In-app notification system.
+- Unread notification tracking.
+- Automatic subscriber notifications.
+
+### ☁️ Cloud Storage Infrastructure
+
+Built around a pluggable Storage Adapter Pattern.
+
+Supported providers:
+
+- Local Storage
+- Cloudflare R2
+- Backblaze B2
+- BunnyCDN
+- Custom S3-compatible storage
+
+<badge color="success">Currently active</badge>
+
+**Backblaze B2**
+
+Storage providers can be switched through the administration panel without redesigning the entire storage layer.
+
+### 🤖 Telegram Bot Integration
+
+- Link Telegram accounts using API keys.
+- Upload videos directly through Telegram.
+- Automatically generate Vidora share URLs.
+- Copy files between Vidora accounts using `/copy`.
+- Send FCM notifications to subscribers after bot uploads.
 
 ---
 
-## 🛠️ Tech Stack
+## 🖥️ Platform Ecosystem
 
-| Layer | Technology |
-|---|---|
-| Backend | Node.js 24, Express 4 |
-| Database | MySQL 9 — 18 tables |
-| Frontend | React 19, TanStack Router, Tailwind CSS 4 |
-| Mobile | Java, ExoPlayer, Retrofit, Glide, AdMob, Firebase, Play Billing |
-| Desktop | Tauri v2 (Rust), GitHub Actions CI/CD |
-| Telegram | node-telegram-bot-api |
-| Storage | Backblaze B2 (active), supports R2/Bunny/S3/Local |
-| Auth | JWT, OTP, Nodemailer |
-| Real-time | Socket.IO, Firebase FCM |
-| CI/CD | GitHub Actions (auto-build Windows .exe + Mac .dmg) |
+| Platform | Technology | Purpose |
+|---|---|---|
+| Backend API | Node.js, Express | Core business logic and APIs |
+| Web Dashboard | React 19, TypeScript | Creator and administration interface |
+| Android | Java, ExoPlayer | Native video consumption |
+| Desktop | Tauri v2, Rust | Cross-platform desktop client |
+| Database | MySQL 9 | Persistent application data |
+| Storage | Backblaze B2 | Video and file storage |
+| Real-time | Socket.IO | Live updates |
+| Notifications | Firebase FCM | Push notifications |
+| Automation | Telegram Bot API | File upload and management |
+
+---
+
+## 🛠️ Technology Stack
+
+### Backend & APIs
+
+<p>
+  <img src="https://skillicons.dev/icons?i=nodejs,express,ts&theme=light" alt="Backend Stack"/>
+</p>
+
+### Frontend
+
+<p>
+  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,ts&theme=light" alt="Frontend Stack"/>
+</p>
+
+### Android Development
+
+<p>
+  <img src="https://skillicons.dev/icons?i=java,androidstudio,firebase&theme=light" alt="Android Stack"/>
+</p>
+
+### Desktop & Systems
+
+<p>
+  <img src="https://skillicons.dev/icons?i=tauri,rust&theme=light" alt="Desktop Stack"/>
+</p>
+
+### Database & Infrastructure
+
+<p>
+  <img src="https://skillicons.dev/icons?i=mysql,redis,docker,linux,cloudflare,githubactions&theme=light" alt="Infrastructure Stack"/>
+</p>
+
+**Additional Technologies**
+
+FFmpeg · ExoPlayer · Retrofit · Glide · AdMob · Google Play Billing · Socket.IO · Backblaze B2 · BunnyCDN · Nodemailer · JWT
+
+---
+
+## 🏗️ Architecture
+
+```mermaid
+flowchart TB
+    U[Users and Creators]
+
+    U --> A[Android Application]
+    U --> W[Web Dashboard]
+    U --> D[Desktop Application]
+    U --> T[Telegram Bot]
+
+    A --> API[Node.js Express API]
+    W --> API
+    D --> API
+    T --> API
+
+    API --> DB[(MySQL Database)]
+    API --> S[Storage Adapter]
+    API --> F[Firebase FCM]
+    API --> RT[Socket.IO]
+
+    S --> B2[Backblaze B2]
+    S --> R2[Cloudflare R2]
+    S --> BC[BunnyCDN]
+    S --> LOCAL[Local Storage]
+
+    API --> Q[Background Jobs]
+    Q --> FF[FFmpeg Processing]
+```
+
+### Video Upload Lifecycle
+
+```mermaid
+flowchart TD
+    A[Creator selects video] --> B[Upload request]
+    B --> C[Backend validation]
+    C --> D[Storage Adapter]
+    D --> E[Video stored]
+    E --> F[FFmpeg thumbnail generation]
+    F --> G[Database metadata saved]
+    G --> H[Creator notification]
+    H --> I[Video available for streaming]
+```
 
 ---
 
 ## 📂 Project Structure
 
-```
+```text
 Vidora/
-├── backend/                  # Node.js + Express API (18 tables)
+│
+├── backend/
 │   ├── src/
 │   │   ├── controllers/
 │   │   ├── routes/
@@ -98,100 +239,224 @@ Vidora/
 │   ├── uploads/
 │   ├── .env.example
 │   └── package.json
-├── vidora-andoid/            # Android app (Java + Firebase)
-├── vidora-desktop/           # Desktop app (Tauri v2 + Rust)
-├── web_dashboard/            # Creator dashboard (React 19 + TypeScript)
+│
+├── vidora-andoid/
+│   └── Android Application
+│
+├── vidora-desktop/
+│   ├── src/
+│   ├── src-tauri/
+│   └── package.json
+│
+├── web_dashboard/
 │   ├── src/
 │   ├── public/
 │   └── package.json
+│
 └── README.md
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation
 
-### Backend
+### Prerequisites
+
+- Node.js 24
+- MySQL 9
+- Java Development Kit
+- Android Studio
+- Rust toolchain
+- Tauri v2 prerequisites
+- FFmpeg
+- Git
+
+### 1. Clone Repository
 
 ```bash
 git clone https://github.com/mynkdev-21/Vidora.git
-cd Vidora/backend
+
+cd Vidora
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+
 npm install
+
 cp .env.example .env
-# Fill in DB, Firebase, SMTP, and storage credentials
+```
+
+Configure database, authentication, Firebase, SMTP, and storage credentials in `.env`.
+
+Start the backend:
+
+```bash
 npm start
 ```
 
-### Web Dashboard
+### 3. Web Dashboard
 
 ```bash
-cd Vidora/web_dashboard
+cd web_dashboard
+
 npm install
+
 npm run dev
 ```
 
-### Android App
+### 4. Android Application
 
-Open `vidora-andoid/` in Android Studio and run on device or emulator.
+Open `vidora-andoid/` in Android Studio.
 
-### Desktop App
+Configure the required Firebase and API settings, sync Gradle, and run on an Android device or emulator.
+
+### 5. Desktop Application
 
 ```bash
-cd Vidora/vidora-desktop
+cd vidora-desktop
+
+npm install
+
 cargo tauri dev
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Environment Configuration
+
+Example backend `.env`:
 
 ```env
 PORT=3000
+
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=
 DB_NAME=videora
+
 JWT_SECRET=
+
 SMTP_HOST=
 SMTP_USER=
 SMTP_PASS=
+
 FIREBASE_PROJECT_ID=
+
 BASE_URL=
 FRONTEND_URL=
 ```
 
----
+Configure the actual environment variables required by your deployment.
 
-## 📊 Scaling Roadmap
-
-| Users | Infrastructure | Cost |
-|---|---|---|
-| 1K | Current setup — fine | ₹0 |
-| 5K | Redis cache (trending, profiles) | €5/mo |
-| 20K | PM2 cluster + MySQL indexes | €0 |
-| 50K | MySQL Read Replica + Cloudflare CDN | €20/mo |
-| 1L+ | Load Balancer + 3 Node instances + Redis Cluster | €60/mo |
-
-```
-Cloudflare CDN → Load Balancer → Node ×3 → Redis + MySQL Primary + Replicas → B2 Storage
-```
+Never commit real API credentials, Firebase private keys, or production secrets.
 
 ---
 
-## 🔲 Pending
+## 📈 Scaling Architecture
 
-- [ ] Cloudflare CDN setup
+The following table represents an infrastructure planning roadmap, not measured production capacity or guaranteed costs.
+
+| Target Users | Planned Infrastructure |
+|---|---|
+| 1K | Current deployment |
+| 5K | Redis caching for trending and profiles |
+| 20K | PM2 cluster and database indexing |
+| 50K | MySQL read replicas and Cloudflare CDN |
+| 100K+ | Load balancer, multiple Node.js instances, Redis cluster |
+
+### Planned Infrastructure
+
+```text
+             Cloudflare CDN
+                    |
+              Load Balancer
+                    |
+          +---------+---------+
+          |         |         |
+        Node 1    Node 2    Node 3
+          |         |         |
+          +---- Redis Cluster
+                    |
+              MySQL Primary
+                    |
+               Read Replicas
+                    |
+              Backblaze B2
+```
+
+Actual infrastructure requirements depend on concurrent viewers, video bitrate, storage usage, request volume, and CDN cache efficiency.
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Cloudflare CDN integration
 - [ ] Video quality selector
-- [ ] Production deployment (domain, SSL, real AdMob IDs)
-- [ ] Play Store listing + Billing products setup
-- [ ] Apple Developer account for signed Mac app
+- [ ] Production deployment with SSL
+- [ ] Production AdMob configuration
+- [ ] Google Play Store release
+- [ ] Play Billing product configuration
+- [ ] Apple Developer account and signed macOS application
+
+---
+
+## 🔒 Security & Reliability
+
+- JWT-based authentication.
+- Refresh token rotation.
+- API request validation.
+- Account restriction mechanisms.
+- View-count abuse prevention.
+- Storage abstraction.
+- Secure environment-based configuration.
+
+Production deployments should also enforce rate limiting, upload validation, authorization checks, secure token storage, and payment verification.
 
 ---
 
 ## 📄 License
 
-MIT License — feel free to use with credit.
+Distributed under the MIT License.
+
+See the `LICENSE` file for details.
 
 ---
 
-Built with ❤️ by [Mayank Singh](https://github.com/mynkdev-21) · [LinkedIn](https://linkedin.com/in/mynk-dev) · [Portfolio](https://mayankdeveloper.site)
+## 📬 Contact & Connect
+
+Have a question, collaboration idea, or want to discuss the project? Feel free to connect.
+
+<p align="center">
+  <a href="mailto:mayanksingh3132@gmail.com">
+    <img src="https://img.shields.io/badge/Email-Contact_Me-EA4335?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"/>
+  </a>
+  <a href="https://linkedin.com/in/mynk-dev">
+    <img src="https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+  </a>
+  <a href="https://t.me/mayankdeveloper">
+    <img src="https://img.shields.io/badge/Telegram-Message-26A5E4?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram"/>
+  </a>
+  <a href="https://github.com/mynkdev-21">
+    <img src="https://img.shields.io/badge/GitHub-Follow-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+  </a>
+</p>
+
+| Platform | Link |
+|---|---|
+| 📧 Email | mayanksingh3132@gmail.com |
+| 🌐 Portfolio | [mayankdeveloper.site](https://mayankdeveloper.site) |
+| 💼 LinkedIn | [mynk-dev](https://linkedin.com/in/mynk-dev) |
+| 🏢 Company | [AmTech INFO](https://amtechinfo.online) |
+| ✈️ Telegram | [@mayankdeveloper](https://t.me/mayankdeveloper) |
+| 🐙 GitHub | [mynkdev-21](https://github.com/mynkdev-21) |
+
+---
+
+<p align="center">
+  <b>Built from architecture to deployment with ❤️ by Mayank Singh.</b>
+  <br/>
+  <sub>Vidora · Video Hosting · Streaming · Creator Monetization</sub>
+</p>
