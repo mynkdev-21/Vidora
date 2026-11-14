@@ -1,9 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID as uuidv4 } from "crypto";
 import fs from "fs";
 import pool from "../db/connection.js";
 import { config } from "../config.js";
 import { generateThumbnail, isVideo } from "../utils/thumbnail.js";
 import { uploadDir } from "../utils/paths.js";
+import { copySharedFile, CopyError } from "../services/file-copy.service.js";
 
 // ── Ensure directories exist ─────────────────────────────────────────────────
 const THUMBS_DIR = uploadDir("thumbnails");
@@ -175,64 +176,13 @@ export async function deleteFile(req, res, next) {
   }
 }
 
-// ── POST /api/files/copy — Copy file from Vidora share link ───────────────────
+// ── POST /api/files/copy — copy a file from an active Vidora share link ──────
 export async function copyFile(req, res, next) {
   try {
-    const { url } = req.body;
-    if (!url) return res.status(400).json({ success: false, message: "URL required." });
-
-    // Extract token from URL (supports full URL or just token)
-    let token = url.trim();
-    if (token.includes("/v/")) token = token.split("/v/")[1];
-    if (token.includes("/")) token = token.split("/")[0];
-    if (token.includes("?")) token = token.split("?")[0];
-
-    // Find original file via share token or file ID
-    let file = null;
-    const [shareRows] = await pool.query(
-      `SELECT f.* FROM share_tokens st JOIN files f ON f.id = st.file_id
-       WHERE st.token = ? AND st.is_active = 1 AND f.status = 'active'`,
-      [token]
-    );
-    if (shareRows.length) {
-      file = shareRows[0];
-    } else {
-      const [fileRows] = await pool.query(
-        "SELECT * FROM files WHERE id = ? AND status = 'active'",
-        [token]
-      );
-      if (fileRows.length) file = fileRows[0];
-    }
-
-    if (!file) return res.status(404).json({ success: false, message: "File not found or link invalid." });
-
-    // Don't allow copying own file
-    if (file.user_id === req.user.id) {
-      return res.status(400).json({ success: false, message: "This file is already in your account." });
-    }
-
-    // Create new DB entry (reference copy — same stored_name, no physical copy)
-    const id = uuidv4();
-    await pool.query(
-      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, thumbnail_url, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [id, req.user.id, file.original_name, file.stored_name, file.mime_type, file.size_bytes, file.storage_path, file.public_url, file.thumbnail_url]
-    );
-
-    // Generate share token for the new copy
-    const crypto = await import("crypto");
-    const shareToken = crypto.randomBytes(12).toString("base64url");
-    await pool.query(
-      "INSERT INTO share_tokens (id, file_id, token) VALUES (?, ?, ?)",
-      [uuidv4(), id, shareToken]
-    );
-
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
-    const shareUrl = `${FRONTEND_URL}/v/${shareToken}`;
-
-    const [newFile] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
-    res.status(201).json({ success: true, message: "File copied to your account!", data: { file: newFile[0], share_url: shareUrl, share_token: shareToken } });
+    const { file, shareToken, shareUrl } = await copySharedFile(req.user.id, req.body.url, { frontendUrl: config.frontendUrl });
+    res.status(201).json({ success: true, message: "File copied to your account!", data: { file, share_url: shareUrl, share_token: shareToken } });
   } catch (err) {
+    if (err instanceof CopyError) return res.status(err.status).json({ success: false, message: err.message });
     next(err);
   }
 }
@@ -343,7 +293,7 @@ async function notifySubscribers(creatorId, fileName, fileId, thumbnailUrl) {
     const { sendPushNotification } = await import("../utils/firebase.js");
     const title = `${creator.name} uploaded a new file`;
     const body = fileName.replace(/\.[^.]+$/, "");
-    const thumbUrl = thumbnailUrl ? `${process.env.BASE_URL || `http://localhost:${process.env.PORT || 5001}`}${thumbnailUrl}` : "";
+    const thumbUrl = thumbnailUrl ? `${config.baseUrl}${thumbnailUrl}` : "";
 
     await sendPushNotification(tokens, title, body, {
       file_id: fileId,
@@ -352,7 +302,7 @@ async function notifySubscribers(creatorId, fileName, fileId, thumbnailUrl) {
     });
 
     // Also create in-app notifications for subscribers
-    const { v4: uuidv4 } = await import("uuid");
+    const { randomUUID: uuidv4 } = await import("crypto");
     const [subs] = await pool.query(
       "SELECT subscriber_id FROM subscriptions WHERE creator_id = ? AND notify = 1",
       [creatorId]

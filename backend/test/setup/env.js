@@ -19,6 +19,8 @@ Object.assign(process.env, {
   API_KEYS: "test_web_key:web,test_mobile_key:mobile",
   UPLOADS_DIR: path.join(os.tmpdir(), "vidora-test-uploads"),
   TELEGRAM_BOT_TOKEN: "",
+  // Never reach the real Firebase project from tests.
+  FIREBASE_SERVICE_ACCOUNT_PATH: path.join(os.tmpdir(), "vidora-test-no-firebase.json"),
   FRONTEND_URL: "http://localhost:8080",
   FRONTEND_ORIGINS: "http://localhost:8080",
 });

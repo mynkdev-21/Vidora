@@ -4,6 +4,7 @@ import rateLimit from "express-rate-limit";
 import { register, login, refresh, logout, me, forgotPassword, resetPassword } from "../controllers/auth.controller.js";
 import { authenticate } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
+import { loginLimiters } from "../middleware/loginLimiter.js";
 
 const router = Router();
 
@@ -59,6 +60,7 @@ router.post(
 router.post(
   "/login",
   authLimiter,
+  loginLimiters({ scope: "user-login", perIp: 20, perEmail: 5 }),
   [
     body("email")
       .isEmail().withMessage("Valid email required.")
@@ -110,7 +112,7 @@ router.get("/verify-email", async (req, res) => {
 router.post("/resend-verification", authenticate, async (req, res) => {
   try {
     const pool = (await import("../db/connection.js")).default;
-    const { v4: uuidv4 } = await import("uuid");
+    const { randomUUID: uuidv4 } = await import("crypto");
     const crypto = await import("crypto");
 
     const [[user]] = await pool.query("SELECT id, name, email, is_verified FROM users WHERE id = ?", [req.user.id]);

@@ -1,4 +1,5 @@
-import { maskSettingRows, changedSettingEntries } from "../utils/settings.js";
+import { maskSettingRows, changedSettingEntries, getNumericSetting } from "../utils/settings.js";
+import { computeBalance, currentEarningRate, updatePayoutStatus, PayoutError } from "../services/earnings.service.js";
 import pool from "../db/connection.js";
 
 // ── GET /api/admin/stats ─────────────────────────────────────────────────────
@@ -211,68 +212,75 @@ export async function deleteFile(req, res, next) {
 }
 
 // ── DELETE /api/admin/files/purge — Permanently delete all soft-deleted files ─
+// Earnings are preserved: frozen legacy views are moved to the ledger before
+// the row disappears (ledger rows for newer views survive via ON DELETE SET
+// NULL). A physical file is removed only when no other row — e.g. a copy made
+// by another user — still references the same stored object.
 export async function purgeDeletedFiles(req, res, next) {
   try {
-    // Get all deleted files with their view counts and owners
     const [files] = await pool.query(
-      "SELECT id, user_id, stored_name, thumbnail_url, view_count FROM files WHERE status = 'deleted'"
+      "SELECT id, user_id, stored_name, thumbnail_url, view_count, legacy_views FROM files WHERE status = 'deleted'"
     );
-
     if (!files.length) {
       return res.json({ success: true, message: "No deleted files to purge.", data: { count: 0 } });
     }
 
-    // Before deleting: save view counts to earnings table so they're preserved
-    const { v4: uuidv4 } = await import("uuid");
-
-    // Get earning rate
-    let earningRate = 5.0;
-    try {
-      const [[rateSetting]] = await pool.query("SELECT value FROM app_settings WHERE id = 'earning_rate'");
-      if (rateSetting) earningRate = parseFloat(rateSetting.value);
-    } catch {}
-
-    for (const file of files) {
-      if (file.view_count > 0) {
-        // Save earnings from views as a permanent record before deleting the file
-        const amount = (file.view_count * earningRate / 1000);
-        await pool.query(
-          "INSERT INTO earnings (id, user_id, file_id, type, amount) VALUES (?, ?, NULL, 'view', ?)",
-          [uuidv4(), file.user_id, amount]
-        );
-        // Save view count to user's purged_views total
-        await pool.query(
-          "UPDATE users SET purged_views = purged_views + ? WHERE id = ?",
-          [file.view_count, file.user_id]
-        );
-      }
-    }
-
-    // Delete from storage (local + cloud)
+    const { randomUUID: uuidv4 } = await import("crypto");
     const { deleteFromStorage } = await import("../utils/storage.js");
+    const legacyRate = await getNumericSetting("legacy_earning_rate", await currentEarningRate());
     let deletedCount = 0;
+    let keptShared = 0;
 
     for (const file of files) {
+      const conn = await pool.getConnection();
+      let removeObject = false;
+      let removeThumb = false;
       try {
-        // Delete main file
-        await deleteFromStorage(file.stored_name);
-        // Delete thumbnail if exists
-        if (file.thumbnail_url) {
-          const thumbName = file.thumbnail_url.replace(/^\/thumbnails\//, "");
-          await deleteFromStorage(thumbName, "thumbnails");
+        await conn.beginTransaction();
+        if (Number(file.legacy_views) > 0) {
+          await conn.query(
+            "INSERT INTO earnings (id, user_id, file_id, type, amount) VALUES (?, ?, NULL, 'view', ?)",
+            [uuidv4(), file.user_id, Number(file.legacy_views) * legacyRate / 1000]
+          );
         }
+        if (Number(file.view_count) > 0) {
+          await conn.query("UPDATE users SET purged_views = purged_views + ? WHERE id = ?", [file.view_count, file.user_id]);
+        }
+        await conn.query("DELETE FROM share_tokens WHERE file_id = ?", [file.id]);
+        await conn.query("DELETE FROM view_logs WHERE file_id = ?", [file.id]);
+        await conn.query("DELETE FROM files WHERE id = ?", [file.id]);
+
+        const [[obj]] = await conn.query("SELECT COUNT(*) AS n FROM files WHERE stored_name = ?", [file.stored_name]);
+        removeObject = Number(obj.n) === 0;
+        if (file.thumbnail_url) {
+          const [[th]] = await conn.query("SELECT COUNT(*) AS n FROM files WHERE thumbnail_url = ?", [file.thumbnail_url]);
+          removeThumb = Number(th.n) === 0;
+        }
+        await conn.commit();
+        deletedCount++;
       } catch (e) {
-        // Continue even if storage delete fails
+        await conn.rollback().catch(() => {});
+        console.error(`Purge failed for file ${file.id}:`, e.message);
+        continue;
+      } finally {
+        conn.release();
       }
 
-      // Delete from DB permanently
-      await pool.query("DELETE FROM share_tokens WHERE file_id = ?", [file.id]);
-      await pool.query("DELETE FROM view_logs WHERE file_id = ?", [file.id]);
-      await pool.query("DELETE FROM files WHERE id = ?", [file.id]);
-      deletedCount++;
+      // Storage is only touched after the DB commit, and only for unreferenced objects.
+      try {
+        if (removeObject) await deleteFromStorage(file.stored_name);
+        else keptShared++;
+        if (removeThumb) await deleteFromStorage(file.thumbnail_url.replace(/^\/thumbnails\//, ""), "thumbnails");
+      } catch (e) {
+        console.warn(`Storage cleanup failed for file ${file.id}:`, e.message);
+      }
     }
 
-    res.json({ success: true, message: `Purged ${deletedCount} files permanently. Earnings preserved.`, data: { count: deletedCount } });
+    res.json({
+      success: true,
+      message: `Purged ${deletedCount} files permanently. Earnings preserved.`,
+      data: { count: deletedCount, shared_objects_kept: keptShared },
+    });
   } catch (err) { next(err); }
 }
 
@@ -328,78 +336,31 @@ export async function updatePayout(req, res, next) {
       return res.status(400).json({ success: false, message: "Invalid status." });
     }
 
-    const updates = ["status = ?"];
-    const values = [status];
-
-    if (transaction_id !== undefined) {
-      updates.push("transaction_id = ?");
-      values.push(transaction_id);
-    }
-    if (notes !== undefined) {
-      updates.push("notes = ?");
-      values.push(notes);
-    }
-    if (receipt_url !== undefined) {
-      updates.push("receipt_url = ?");
-      values.push(receipt_url);
-    }
-    if (status === "completed" || status === "failed") {
-      updates.push("processed_at = NOW()");
+    let result;
+    try {
+      result = await updatePayoutStatus(id, { status, transaction_id, notes, receipt_url });
+    } catch (err) {
+      if (err instanceof PayoutError) return res.status(err.status).json({ success: false, message: err.message });
+      throw err;
     }
 
-    values.push(id);
-    await pool.query(`UPDATE payouts SET ${updates.join(", ")} WHERE id = ?`, values);
+    // Notify only on a real transition — re-saving a payout must not re-send anything.
+    if (result.transitioned && (status === "completed" || status === "failed")) {
+      const { payout } = result;
+      const amount = `$${parseFloat(payout.amount).toFixed(2)}`;
+      const [[userData]] = await pool.query("SELECT name, email FROM users WHERE id = ?", [payout.user_id]);
+      const { sendEmail, payoutCompletedEmail, payoutFailedEmail } = await import("../utils/mailer.js");
 
-    // Auto-notify user on payout status change
-    if (status === "completed" || status === "failed") {
-      const [[payout]] = await pool.query("SELECT user_id, amount FROM payouts WHERE id = ?", [id]);
-      if (payout) {
-        const { createNotification } = await import("./admin.controller.js");
-        const [[userData]] = await pool.query("SELECT name, email FROM users WHERE id = ?", [payout.user_id]);
-
-        if (status === "completed") {
-          await createNotification(payout.user_id, "Payout Completed", `Your withdrawal of $${parseFloat(payout.amount).toFixed(2)} has been processed successfully.`, "payout");
-          // Send email
-          if (userData) {
-            const { sendEmail, payoutCompletedEmail } = await import("../utils/mailer.js");
-            // Fetch full payout details for method and txn id
-            const [[payoutDetail]] = await pool.query("SELECT method, transaction_id FROM payouts WHERE id = ?", [id]);
-            const payoutMethod = payoutDetail?.method || req.body.method || "bank transfer";
-            const txnId = transaction_id || payoutDetail?.transaction_id || null;
-            sendEmail(userData.email, "Vidora — Payout Completed ✓", payoutCompletedEmail(userData.name, payout.amount, payoutMethod, txnId)).catch(() => {});
-          }
-        } else {
-          await createNotification(payout.user_id, "Payout Failed", `Your withdrawal of $${parseFloat(payout.amount).toFixed(2)} was rejected. Check your withdraw page for details.`, "payout");
-          // Send email
-          if (userData) {
-            const { sendEmail, payoutFailedEmail } = await import("../utils/mailer.js");
-            sendEmail(userData.email, "Vidora — Payout Failed", payoutFailedEmail(userData.name, payout.amount, notes)).catch(() => {});
-          }
+      if (status === "completed") {
+        await createNotification(payout.user_id, "Payout Completed", `Your withdrawal of ${amount} has been processed successfully.`, "payout");
+        if (userData) {
+          const [[detail]] = await pool.query("SELECT method, transaction_id FROM payouts WHERE id = ?", [id]);
+          sendEmail(userData.email, "Vidora — Payout Completed ✓",
+            payoutCompletedEmail(userData.name, payout.amount, detail?.method || "bank transfer", detail?.transaction_id || null)).catch(() => {});
         }
-      }
-    }
-
-    // If completed, give referral bonus to the referrer
-    if (status === "completed") {
-      const [[payout]] = await pool.query("SELECT user_id, amount FROM payouts WHERE id = ?", [id]);
-      if (payout) {
-        const [[refData]] = await pool.query("SELECT referred_by FROM users WHERE id = ?", [payout.user_id]);
-        if (refData && refData.referred_by) {
-          const { v4: uuidv4 } = await import("uuid");
-          // Get referral bonus percentage from settings
-          let bonusPct = 5;
-          try {
-            const [[setting]] = await pool.query("SELECT value FROM app_settings WHERE id = 'referral_bonus'");
-            if (setting) bonusPct = parseFloat(setting.value);
-          } catch {}
-          const bonus = parseFloat((payout.amount * bonusPct / 100).toFixed(4));
-          if (bonus > 0) {
-            await pool.query(
-              "INSERT INTO earnings (id, user_id, type, amount) VALUES (?, ?, 'referral', ?)",
-              [uuidv4(), refData.referred_by, bonus]
-            );
-          }
-        }
+      } else {
+        await createNotification(payout.user_id, "Payout Failed", `Your withdrawal of ${amount} was rejected. Check your withdraw page for details.`, "payout");
+        if (userData) sendEmail(userData.email, "Vidora — Payout Failed", payoutFailedEmail(userData.name, payout.amount, notes)).catch(() => {});
       }
     }
 
@@ -613,25 +574,12 @@ export async function getUserDetail(req, res, next) {
       user.referrer = refRows.length ? refRows[0] : null;
     }
 
-    // Calculate earnings
-    let earningRate = 5.0;
-    try {
-      const [[rateSetting]] = await pool.query("SELECT value FROM app_settings WHERE id = 'earning_rate'");
-      if (rateSetting) earningRate = parseFloat(rateSetting.value);
-    } catch {}
-    user.total_earnings = parseFloat((parseInt(user.total_views) * earningRate / 1000).toFixed(4));
-
-    // Payout totals
-    const [[payoutTotals]] = await pool.query(
-      `SELECT
-        COALESCE(SUM(CASE WHEN status='completed' THEN amount ELSE 0 END), 0) AS total_paid,
-        COALESCE(SUM(CASE WHEN status='pending' THEN amount ELSE 0 END), 0) AS pending_amount
-       FROM payouts WHERE user_id = ?`,
-      [id]
-    );
-    user.total_paid = parseFloat(payoutTotals.total_paid) || 0;
-    user.pending_amount = parseFloat(payoutTotals.pending_amount) || 0;
-    user.available_balance = Math.max(0, user.total_earnings - user.total_paid - user.pending_amount);
+    // Earnings — same calculation the creator sees and payouts are checked against
+    const balance = await computeBalance(id);
+    user.total_earnings = balance.total;
+    user.total_paid = balance.total_paid_out;
+    user.pending_amount = balance.pending_payout + balance.processing_payout;
+    user.available_balance = balance.available_balance;
 
     res.json({ success: true, data: { user } });
   } catch (err) { next(err); }
@@ -691,7 +639,7 @@ export async function replyTicket(req, res, next) {
       updates.push("replied_at = NOW()");
 
       // Also add to ticket_replies for conversation
-      const { v4: uuidv4 } = await import("uuid");
+      const { randomUUID: uuidv4 } = await import("crypto");
       await pool.query(
         "INSERT INTO ticket_replies (id, ticket_id, sender, message) VALUES (?, ?, 'admin', ?)",
         [uuidv4(), id, admin_reply.trim()]
@@ -743,7 +691,7 @@ export async function sendNotification(req, res, next) {
       return res.status(400).json({ success: false, message: "user_id, title, and message required." });
     }
 
-    const { v4: uuidv4 } = await import("uuid");
+    const { randomUUID: uuidv4 } = await import("crypto");
     await pool.query(
       "INSERT INTO notifications (id, user_id, title, message, type) VALUES (?, ?, ?, ?, ?)",
       [uuidv4(), user_id, title.trim(), message.trim(), type || "custom"]
@@ -756,7 +704,7 @@ export async function sendNotification(req, res, next) {
 // ── Helper: create notification (used internally) ────────────────────────────
 export async function createNotification(userId, title, message, type = "system") {
   try {
-    const { v4: uuidv4 } = await import("uuid");
+    const { randomUUID: uuidv4 } = await import("crypto");
     await pool.query(
       "INSERT INTO notifications (id, user_id, title, message, type) VALUES (?, ?, ?, ?, ?)",
       [uuidv4(), userId, title, message, type]
@@ -773,7 +721,7 @@ export async function broadcastNotification(req, res, next) {
       return res.status(400).json({ success: false, message: "Title and message required." });
     }
 
-    const { v4: uuidv4 } = await import("uuid");
+    const { randomUUID: uuidv4 } = await import("crypto");
     const [users] = await pool.query("SELECT id FROM users WHERE is_active = 1");
 
     for (const user of users) {

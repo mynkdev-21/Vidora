@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID as uuidv4 } from "crypto";
 import crypto from "crypto";
 import pool from "../db/connection.js";
 import { sendStoredFile } from "../utils/media.js";

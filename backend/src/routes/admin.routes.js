@@ -5,6 +5,7 @@ import path from "path";
 import fs from "fs";
 import { authenticateAdmin } from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.js";
+import { loginLimiters } from "../middleware/loginLimiter.js";
 import { uploadDir } from "../utils/paths.js";
 import { maskSettingMap, changedSettingEntries } from "../utils/settings.js";
 import { adminLogin, adminMe, adminUpdate } from "../controllers/admin-auth.controller.js";
@@ -60,6 +61,7 @@ const router = Router();
 // ── Public admin auth routes ─────────────────────────────────────────────────
 router.post(
   "/auth/login",
+  loginLimiters({ scope: "admin-login", perIp: 10, perEmail: 5 }),
   [
     body("email").isEmail().withMessage("Valid email required.").normalizeEmail(),
     body("password").notEmpty().withMessage("Password is required."),

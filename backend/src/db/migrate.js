@@ -29,7 +29,10 @@ export function listMigrationFiles(dir = MIGRATIONS_DIR) {
     });
 }
 
-export async function runMigrations({ database = process.env.DB_NAME || "videora", statusOnly = false, log = console.log } = {}) {
+/**
+ * @param upTo  apply migrations up to and including this filename (tests/upgrades)
+ */
+export async function runMigrations({ database = process.env.DB_NAME || "videora", statusOnly = false, upTo, log = console.log } = {}) {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || "localhost",
     port: Number(process.env.DB_PORT) || 3306,
@@ -50,7 +53,7 @@ export async function runMigrations({ database = process.env.DB_NAME || "videora
 
     const [rows] = await conn.query("SELECT name, checksum FROM schema_migrations");
     const applied = new Map(rows.map((r) => [r.name, r.checksum]));
-    const files = listMigrationFiles();
+    const files = listMigrationFiles().filter((f) => !upTo || f.name <= upTo);
 
     const changed = files.filter((f) => applied.has(f.name) && applied.get(f.name) !== f.checksum);
     if (changed.length) {

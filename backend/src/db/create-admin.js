@@ -5,7 +5,7 @@
  */
 import mysql from "mysql2/promise";
 import bcrypt from "bcryptjs";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID as uuidv4 } from "crypto";
 
 const [name, email, password] = process.argv.slice(2);
 

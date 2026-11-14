@@ -1,5 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
 import pool from "../db/connection.js";
+import {
+  computeBalance, currentEarningRate, minPayout, referralBonusPct,
+  requestPayout as createPayout, PayoutError,
+} from "../services/earnings.service.js";
 
 // ── GET /api/earnings ────────────────────────────────────────────────────────
 export async function getEarnings(req, res, next) {
@@ -42,92 +45,27 @@ export async function getEarnings(req, res, next) {
   }
 }
 
-// ── Rate: dynamic from app_settings ───────────────────────────────────────────
-async function getEarningRate() {
-  try {
-    const [[row]] = await pool.query("SELECT value FROM app_settings WHERE id = 'earning_rate'");
-    return row ? parseFloat(row.value) : 5.0;
-  } catch { return 5.0; }
-}
-
-async function getMinPayout() {
-  try {
-    const [[row]] = await pool.query("SELECT value FROM app_settings WHERE id = 'min_payout'");
-    return row ? parseFloat(row.value) : 5.0;
-  } catch { return 5.0; }
-}
-
-async function getReferralBonusPct() {
-  try {
-    const [[row]] = await pool.query("SELECT value FROM app_settings WHERE id = 'referral_bonus'");
-    return row ? parseFloat(row.value) : 5.0;
-  } catch { return 5.0; }
-}
-
 // ── GET /api/earnings/summary ────────────────────────────────────────────────
 export async function getEarningsSummary(req, res, next) {
   try {
-    const RATE = await getEarningRate();
-    const RATE_PER_VIEW = RATE / 1000;
-
-    // Calculate earnings from view counts (include ALL existing files)
-    const [[viewData]] = await pool.query(
-      `SELECT COALESCE(SUM(view_count), 0) AS total_views
-       FROM files WHERE user_id = ?`,
-      [req.user.id]
-    );
-
-    // Include purged views from users table
-    const [[userData]] = await pool.query(
-      "SELECT COALESCE(purged_views, 0) AS purged_views FROM users WHERE id = ?",
-      [req.user.id]
-    );
-
-    const totalViews = (parseInt(viewData.total_views) || 0) + (parseInt(userData.purged_views) || 0);
-    const fromActiveViews = (parseInt(viewData.total_views) || 0) * RATE_PER_VIEW;
-
-    // Also check earnings table for saved view earnings (from purged files) + referral/bonuses
-    const [[bonuses]] = await pool.query(
-      `SELECT
-         COALESCE(SUM(CASE WHEN type='view'     THEN amount ELSE 0 END),0) AS from_purged_views,
-         COALESCE(SUM(CASE WHEN type='referral' THEN amount ELSE 0 END),0) AS from_referrals,
-         COALESCE(SUM(CASE WHEN type='bonus'    THEN amount ELSE 0 END),0) AS from_bonuses
-       FROM earnings WHERE user_id = ?`,
-      [req.user.id]
-    );
-
-    const fromPurgedViews = parseFloat(bonuses.from_purged_views) || 0;
-    const fromViews = fromActiveViews + fromPurgedViews;
-    const fromReferrals = parseFloat(bonuses.from_referrals) || 0;
-    const total = fromViews + fromReferrals + (parseFloat(bonuses.from_bonuses) || 0);
-
-    const [[payoutSummary]] = await pool.query(
-      `SELECT
-         COALESCE(SUM(CASE WHEN status='completed' THEN amount ELSE 0 END),0) AS total_paid_out,
-         COALESCE(SUM(CASE WHEN status='pending'   THEN amount ELSE 0 END),0) AS pending_payout
-       FROM payouts WHERE user_id = ?`,
-      [req.user.id]
-    );
-
-    const totalPaidOut = parseFloat(payoutSummary.total_paid_out) || 0;
-    const pendingPayout = parseFloat(payoutSummary.pending_payout) || 0;
-    const available = Math.max(0, total - totalPaidOut - pendingPayout);
-
+    const [balance, rate, min] = await Promise.all([
+      computeBalance(req.user.id), currentEarningRate(), minPayout(),
+    ]);
     res.json({
       success: true,
       data: {
-        total_views:      totalViews,
-        rate_per_1000:    RATE,
-        min_payout:       await getMinPayout(),
-        total:            parseFloat(total.toFixed(4)),
-        from_views:       parseFloat(fromViews.toFixed(4)),
-        from_referrals:   fromReferrals,
-        today:            0, // TODO: track daily views
-        this_week:        0, // TODO: track weekly views
-        this_month:       parseFloat(fromViews.toFixed(4)), // approximate
-        total_paid_out:   totalPaidOut,
-        pending_payout:   pendingPayout,
-        available_balance: parseFloat(available.toFixed(4)),
+        total_views:       balance.total_views,
+        rate_per_1000:     rate,
+        min_payout:        min,
+        total:             balance.total,
+        from_views:        balance.from_views,
+        from_referrals:    balance.from_referrals,
+        today:             0, // TODO: track daily views
+        this_week:         0, // TODO: track weekly views
+        this_month:        balance.from_views, // approximate
+        total_paid_out:    balance.total_paid_out,
+        pending_payout:    balance.pending_payout,
+        available_balance: balance.available_balance,
       },
     });
   } catch (err) {
@@ -139,53 +77,10 @@ export async function getEarningsSummary(req, res, next) {
 export async function requestPayout(req, res, next) {
   try {
     const { amount, method } = req.body;
-    const MIN_PAYOUT = await getMinPayout();
-    const RATE = await getEarningRate();
-
-    // Check available balance (earnings from views + referral bonuses - payouts)
-    // Include ALL files — deleted files still earned views
-    const [[viewData]] = await pool.query(
-      `SELECT COALESCE(SUM(view_count), 0) AS total_views
-       FROM files WHERE user_id = ?`,
-      [req.user.id]
-    );
-    const totalViews = parseInt(viewData.total_views) || 0;
-    const fromActiveViews = totalViews * RATE / 1000;
-
-    const [[bonuses]] = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) AS bonus_total
-       FROM earnings WHERE user_id = ? AND type IN ('referral','bonus','view')`,
-      [req.user.id]
-    );
-    const totalEarned = fromActiveViews + (parseFloat(bonuses.bonus_total) || 0);
-
-    const [[payoutData]] = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) AS paid
-       FROM payouts WHERE user_id = ? AND status IN ('pending','processing','completed')`,
-      [req.user.id]
-    );
-    const totalPaid = parseFloat(payoutData.paid) || 0;
-    const available = Math.max(0, totalEarned - totalPaid);
-
-    if (available < MIN_PAYOUT) {
-      return res.status(400).json({
-        success: false,
-        message: `Minimum payout is $${MIN_PAYOUT}. Your available balance is $${available.toFixed(2)}.`,
-      });
-    }
-
-    if (parseFloat(amount) > available) {
-      return res.status(400).json({ success: false, message: "Requested amount exceeds available balance." });
-    }
-
-    const id = uuidv4();
-    await pool.query(
-      "INSERT INTO payouts (id, user_id, amount, method) VALUES (?, ?, ?, ?)",
-      [id, req.user.id, amount, method]
-    );
-
-    res.status(201).json({ success: true, message: "Payout request submitted.", data: { payout_id: id } });
+    const payout = await createPayout(req.user.id, { amount, method });
+    res.status(201).json({ success: true, message: "Payout request submitted.", data: { payout_id: payout.id } });
   } catch (err) {
+    if (err instanceof PayoutError) return res.status(err.status).json({ success: false, message: err.message });
     next(err);
   }
 }
@@ -217,7 +112,7 @@ export async function getReferralStats(req, res, next) {
         total_referrals: parseInt(total_referrals) || 0,
         total_earned: parseFloat(total_earned) || 0,
         referral_code: req.user.id,
-        bonus_percent: await getReferralBonusPct(),
+        bonus_percent: await referralBonusPct(),
         referrals: referredUsers,
       },
     });

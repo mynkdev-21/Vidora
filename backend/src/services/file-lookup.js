@@ -1,6 +1,7 @@
 import pool from "../db/connection.js";
 
-const FILE_COLUMNS = "f.id, f.user_id, f.stored_name, f.mime_type, f.original_name";
+// payee_user_id: who earns from views — the original uploader for copies.
+const FILE_COLUMNS = "f.id, f.user_id, COALESCE(f.payee_user_id, f.user_id) AS payee_user_id, f.stored_name, f.mime_type, f.original_name";
 
 /**
  * Resolves a public reference — a file ID or an active share token — to an

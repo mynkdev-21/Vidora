@@ -17,6 +17,7 @@ import pool from "../db/connection.js";
 import { findActiveFile } from "../services/file-lookup.js";
 import { getNumericSetting } from "../utils/settings.js";
 import { sendStoredFile } from "../utils/media.js";
+import { creditViewEarning } from "../services/earnings.service.js";
 
 export const VIEW_TICKET_TTL_SECONDS = 6 * 60 * 60;
 
@@ -80,7 +81,8 @@ export async function issueViewTicket(req, res, next) {
  * caller's transaction. Returns the reason code ("ok" means counted).
  */
 async function decideOutcome(conn, { file, viewerKey }) {
-  if (viewerKey === `u:${file.user_id}`) return "self_view";
+  // Neither the file's owner nor (for copies) the original uploader earns from their own views.
+  if (viewerKey === `u:${file.user_id}` || viewerKey === `u:${file.payee_user_id}`) return "self_view";
 
   const cap = await getNumericSetting("view_daily_cap_per_viewer", VIEW_DEFAULTS.dailyCapPerViewer, conn);
   const [[{ today }]] = await conn.query(
@@ -106,6 +108,8 @@ async function recordCountedView(conn, { file, shareToken, ip }) {
   }
   // Legacy per-IP log kept for existing admin reports.
   await conn.query("INSERT INTO view_logs (file_id, ip) VALUES (?, ?)", [file.id, String(ip).slice(0, 45)]);
+  // Money: credited at today's rate to whoever earns from this file.
+  await creditViewEarning(conn, { fileId: file.id, payeeUserId: file.payee_user_id });
 }
 
 const NOT_COUNTED_MESSAGES = {

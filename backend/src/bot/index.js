@@ -17,8 +17,10 @@ import axios       from "axios";
 import FormData    from "form-data";
 import path        from "path";
 import fs          from "fs";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID as uuidv4 } from "crypto";
 import pool        from "../db/connection.js";
+import { config }  from "../config.js";
+import { copySharedFile, CopyError } from "../services/file-copy.service.js";
 
 const TOKEN    = process.env.TELEGRAM_BOT_TOKEN;
 const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
@@ -163,50 +165,16 @@ bot.onText(/\/copy (.+)/, async (msg, match) => {
   const statusMsg = await bot.sendMessage(chatId, `⏳ Copying file…`);
 
   try {
-    // Extract token from URL
-    let token = url;
-    if (token.includes("/v/")) token = token.split("/v/")[1];
-    if (token.includes("/")) token = token.split("/")[0];
-    if (token.includes("?")) token = token.split("?")[0];
-
-    // Find original file
-    let file = null;
-    const [shareRows] = await pool.query(
-      `SELECT f.* FROM share_tokens st JOIN files f ON f.id = st.file_id
-       WHERE st.token = ? AND st.is_active = 1 AND f.status = 'active'`,
-      [token]
-    );
-    if (shareRows.length) file = shareRows[0];
-    else {
-      const [fileRows] = await pool.query("SELECT * FROM files WHERE id = ? AND status = 'active'", [token]);
-      if (fileRows.length) file = fileRows[0];
+    let result;
+    try {
+      result = await copySharedFile(user.id, url, { frontendUrl: config.frontendUrl });
+    } catch (err) {
+      if (err instanceof CopyError) {
+        return bot.editMessageText(`❌ ${err.message}`, { chat_id: chatId, message_id: statusMsg.message_id });
+      }
+      throw err;
     }
-
-    if (!file) {
-      return bot.editMessageText(`❌ *File not found or link invalid.*`, { chat_id: chatId, message_id: statusMsg.message_id, parse_mode: "Markdown" });
-    }
-
-    if (file.user_id === user.id) {
-      return bot.editMessageText(`ℹ️ This file is already in your account.`, { chat_id: chatId, message_id: statusMsg.message_id });
-    }
-
-    // Create reference copy
-    const newId = uuidv4();
-    await pool.query(
-      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, thumbnail_url, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [newId, user.id, file.original_name, file.stored_name, file.mime_type, file.size_bytes, file.storage_path, file.public_url, file.thumbnail_url]
-    );
-
-    // Generate share token for the copy
-    const crypto = await import("crypto");
-    const shareToken = crypto.randomBytes(12).toString("base64url");
-    await pool.query(
-      "INSERT INTO share_tokens (id, file_id, token) VALUES (?, ?, ?)",
-      [uuidv4(), newId, shareToken]
-    );
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:8080";
-    const copyShareUrl = `${FRONTEND_URL}/v/${shareToken}`;
+    const { file, shareUrl: copyShareUrl } = result;
 
     const safeName = file.original_name.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&');
     await bot.editMessageText(
