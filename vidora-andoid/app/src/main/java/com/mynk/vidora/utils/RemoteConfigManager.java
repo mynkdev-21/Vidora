@@ -13,7 +13,7 @@ import java.util.Map;
  * Fetches dynamic values like BASE_URL from Firebase console.
  * 
  * Setup in Firebase Console → Remote Config:
- *   - base_url: "http://10.95.58.78:5001/"  (change to production URL later)
+ *   - base_url: optional override of BuildConfig.API_BASE_URL (must be https:// in release)
  *   - api_key: "<MOBILE_CLIENT_KEY>"
  */
 public class RemoteConfigManager {
@@ -49,6 +49,12 @@ public class RemoteConfigManager {
     public static String getBaseUrl() {
         if (remoteConfig == null) return Constants.BASE_URL;
         String url = remoteConfig.getString("base_url");
-        return url.isEmpty() ? Constants.BASE_URL : url;
+        if (url.isEmpty()) return Constants.BASE_URL;
+        // Release builds only talk to the API over HTTPS, whatever Remote Config says.
+        if (!com.mynk.vidora.BuildConfig.DEBUG && !url.startsWith("https://")) {
+            Log.w(TAG, "Ignoring non-HTTPS base_url from Remote Config.");
+            return Constants.BASE_URL;
+        }
+        return url.endsWith("/") ? url : url + "/";
     }
 }

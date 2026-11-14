@@ -24,9 +24,10 @@ export function errorHandler(err, req, res, _next) {
   }
 
   const status = err.status || err.statusCode || 500;
-  const message = process.env.NODE_ENV === "production"
-    ? "Internal server error."
-    : err.message;
+  // 4xx messages are written for clients; 5xx details stay in the server log.
+  const message = status < 500 || process.env.NODE_ENV !== "production"
+    ? err.message
+    : "Internal server error.";
 
   res.status(status).json({ success: false, message });
 }

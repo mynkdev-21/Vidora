@@ -78,9 +78,17 @@ public class AdsConfig {
         if (com.mynk.vidora.billing.SubscriptionManager.getInstance().isPremium()) return false;
         return adsEnabled;
     }
-    public static String getBannerId() { return bannerId; }
-    public static String getRewardedId() { return rewardedId; }
-    public static String getInterstitialId() { return interstitialId; }
+    // Debug builds always get Google's test units (clicking real ads during
+    // development violates AdMob policy). An empty ID means "no ad".
+    public static String getBannerId() { return unit(bannerId, com.mynk.vidora.utils.Constants.TEST_AD_BANNER); }
+    public static String getRewardedId() { return unit(rewardedId, com.mynk.vidora.utils.Constants.TEST_AD_REWARDED); }
+    public static String getInterstitialId() { return unit(interstitialId, com.mynk.vidora.utils.Constants.TEST_AD_INTERSTITIAL); }
+
+    // Package-private for unit tests.
+    static String unit(String configured, String testUnit) {
+        if (configured == null || configured.isEmpty()) return "";
+        return com.mynk.vidora.BuildConfig.DEBUG ? testUnit : configured;
+    }
 
     private static void loadFromCache(Context context) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);

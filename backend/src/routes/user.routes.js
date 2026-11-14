@@ -1,33 +1,12 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import multer from "multer";
-import path from "path";
-import { randomUUID as uuidv4 } from "crypto";
-import fs from "fs";
 import { authenticate, authorize } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { getProfile, updateProfile, changePassword, listUsers, getApiKey } from "../controllers/user.controller.js";
 import { getPaymentMethods, savePaymentMethod } from "../controllers/payment.controller.js";
-import { uploadDir } from "../utils/paths.js";
+import { imageUploader, verifyImageContent } from "../utils/imageUpload.js";
 
-// Ensure avatars directory exists
-const AVATARS_DIR = uploadDir("avatars");
-if (!fs.existsSync(AVATARS_DIR)) fs.mkdirSync(AVATARS_DIR, { recursive: true });
-
-const avatarUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, AVATARS_DIR),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `avatar_${uuidv4()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only image files allowed."));
-  },
-});
+const avatarUpload = imageUploader("avatars", "avatar_");
 
 const router = Router();
 
@@ -65,7 +44,7 @@ router.patch(
 );
 
 // POST /api/users/avatar — Upload profile picture
-router.post("/avatar", avatarUpload.single("avatar"), async (req, res) => {
+router.post("/avatar", avatarUpload.single("avatar"), verifyImageContent, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: "No image provided." });
     const avatarUrl = `/avatars/${req.file.filename}`;

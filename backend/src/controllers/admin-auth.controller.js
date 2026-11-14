@@ -81,18 +81,30 @@ export async function adminUpdate(req, res, next) {
     const [[admin]] = await pool.query("SELECT id, password_hash, email FROM admins WHERE id = ?", [req.admin.id]);
     if (!admin) return res.status(404).json({ success: false, message: "Admin not found." });
 
-    // If changing password, verify current
+    const normalizedEmail = typeof email === "string" ? email.toLowerCase().trim() : "";
+    const changingEmail = !!normalizedEmail && normalizedEmail !== admin.email;
+    if (!newPassword && !changingEmail) {
+      return res.status(400).json({ success: false, message: "Nothing to update." });
+    }
+
+    // Any credential change requires the current password (a stolen session alone is not enough).
+    if (!currentPassword) return res.status(400).json({ success: false, message: "Current password required." });
+    const match = await bcrypt.compare(currentPassword, admin.password_hash);
+    if (!match) return res.status(401).json({ success: false, message: "Current password is incorrect." });
+
+    if (changingEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return res.status(400).json({ success: false, message: "Valid email required." });
+    }
+    if (newPassword && String(newPassword).length < 10) {
+      return res.status(400).json({ success: false, message: "New admin password must be at least 10 characters." });
+    }
+
     if (newPassword) {
-      if (!currentPassword) return res.status(400).json({ success: false, message: "Current password required." });
-      const match = await bcrypt.compare(currentPassword, admin.password_hash);
-      if (!match) return res.status(401).json({ success: false, message: "Current password is incorrect." });
       const newHash = await bcrypt.hash(newPassword, 12);
       await pool.query("UPDATE admins SET password_hash = ? WHERE id = ?", [newHash, req.admin.id]);
     }
-
-    // If changing email
-    if (email && email !== admin.email) {
-      await pool.query("UPDATE admins SET email = ? WHERE id = ?", [email.toLowerCase().trim(), req.admin.id]);
+    if (changingEmail) {
+      await pool.query("UPDATE admins SET email = ? WHERE id = ?", [normalizedEmail, req.admin.id]);
     }
 
     res.json({ success: true, message: "Admin profile updated." });

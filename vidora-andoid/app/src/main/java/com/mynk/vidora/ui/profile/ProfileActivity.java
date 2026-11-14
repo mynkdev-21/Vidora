@@ -77,7 +77,7 @@ public class ProfileActivity extends AppCompatActivity {
                 ApiClient.getService().getAppSettings().enqueue(new retrofit2.Callback<java.util.Map<String, Object>>() {
                     @Override
                     public void onResponse(retrofit2.Call<java.util.Map<String, Object>> call, retrofit2.Response<java.util.Map<String, Object>> response) {
-                        String dashboardUrl = "http://10.59.203.78:8080/dashboard";
+                        String dashboardUrl = com.mynk.vidora.utils.Constants.WEB_BASE_URL + "dashboard";
                         if (response.isSuccessful() && response.body() != null) {
                             Object dataObj = response.body().get("data");
                             if (dataObj instanceof java.util.Map) {

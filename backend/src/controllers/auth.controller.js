@@ -2,8 +2,27 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { randomUUID as uuidv4 } from "crypto";
 import pool from "../db/connection.js";
+import crypto from "crypto";
+import { config } from "../config.js";
+
+export const RESET_CODE_MAX_ATTEMPTS = 5;
+const RESET_CODE_TTL_MINUTES = 15;
+
+/** Reset codes are stored as HMAC(server secret, userId:code) — never in plain text. */
+function hashResetCode(userId, code) {
+  return crypto.createHmac("sha256", config.jwt.secret).update(`${userId}:${code}`).digest("hex");
+}
+
+/** Uniformly random 6-digit code from a CSPRNG. */
+export function generateResetCode() {
+  return String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
+}
+
 
 const SALT_ROUNDS = 12;
+
+// Compared against when the email doesn't exist, so response time doesn't reveal it.
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("vidora-timing-equaliser", SALT_ROUNDS);
 
 function signAccessToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, {
@@ -95,12 +114,15 @@ export async function login(req, res, next) {
       [email.toLowerCase().trim()]
     );
 
-    if (!rows.length) {
+    const user = rows[0];
+    // Always run bcrypt (against a dummy hash for unknown emails) so timing
+    // doesn't reveal which addresses are registered.
+    const passwordMatch = await bcrypt.compare(password, user ? user.password_hash : DUMMY_PASSWORD_HASH);
+    if (!user || !passwordMatch) {
       return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
-    const user = rows[0];
-
+    // Ban status is only disclosed to someone who knows the password.
     if (!user.is_active) {
       return res.status(403).json({
         success: false,
@@ -108,11 +130,6 @@ export async function login(req, res, next) {
         code: "ACCOUNT_BANNED",
         support_url: "https://t.me/vidorasupport",
       });
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatch) {
-      return res.status(401).json({ success: false, message: "Invalid email or password." });
     }
 
     const tokenPayload = { id: user.id, email: user.email, role: user.role };
@@ -278,17 +295,13 @@ export async function forgotPassword(req, res, next) {
       }
     }
 
-    // Generate 6-digit OTP
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const otp = generateResetCode();
 
-    // Delete old OTPs for this user
+    // One live code per user; only its keyed hash is stored.
     await pool.query("DELETE FROM password_resets WHERE user_id = ?", [user.id]);
-
-    // Save OTP
     await pool.query(
-      "INSERT INTO password_resets (id, user_id, otp, expires_at) VALUES (?, ?, ?, ?)",
-      [uuidv4(), user.id, otp, expiresAt]
+      "INSERT INTO password_resets (id, user_id, otp, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))",
+      [uuidv4(), user.id, hashResetCode(user.id, otp), RESET_CODE_TTL_MINUTES]
     );
 
     // Send email
@@ -321,25 +334,48 @@ export async function resetPassword(req, res, next) {
 
     const userId = users[0].id;
 
-    // Verify OTP
-    const [otpRows] = await pool.query(
-      "SELECT id FROM password_resets WHERE user_id = ? AND otp = ? AND expires_at > NOW() AND used = 0",
-      [userId, otp]
-    );
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [codes] = await conn.query(
+        `SELECT id, otp, attempts FROM password_resets
+         WHERE user_id = ? AND used = 0 AND expires_at > NOW()
+         ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
+        [userId]
+      );
+      const code = codes[0];
+      if (!code) {
+        await conn.rollback();
+        return res.status(400).json({ success: false, message: "Invalid or expired OTP." });
+      }
 
-    if (!otpRows.length) {
-      return res.status(400).json({ success: false, message: "Invalid or expired OTP." });
+      const expected = Buffer.from(code.otp, "hex");
+      const given = Buffer.from(hashResetCode(userId, String(otp)), "hex");
+      const matches = expected.length === given.length && crypto.timingSafeEqual(expected, given);
+
+      if (!matches) {
+        const attempts = code.attempts + 1;
+        const exhausted = attempts >= RESET_CODE_MAX_ATTEMPTS;
+        await conn.query("UPDATE password_resets SET attempts = ?, used = ? WHERE id = ?", [attempts, exhausted ? 1 : 0, code.id]);
+        await conn.commit();
+        return res.status(400).json({
+          success: false,
+          message: exhausted ? "Too many incorrect attempts. Request a new code." : "Invalid or expired OTP.",
+          code: exhausted ? "OTP_ATTEMPTS_EXCEEDED" : undefined,
+        });
+      }
+
+      await conn.query("UPDATE password_resets SET used = 1 WHERE id = ?", [code.id]);
+      const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+      await conn.query("UPDATE users SET password_hash = ? WHERE id = ?", [newHash, userId]);
+      await conn.query("DELETE FROM refresh_tokens WHERE user_id = ?", [userId]);
+      await conn.commit();
+    } catch (err) {
+      await conn.rollback().catch(() => {});
+      throw err;
+    } finally {
+      conn.release();
     }
-
-    // Mark OTP as used
-    await pool.query("UPDATE password_resets SET used = 1 WHERE id = ?", [otpRows[0].id]);
-
-    // Update password
-    const newHash = await bcrypt.hash(newPassword, 12);
-    await pool.query("UPDATE users SET password_hash = ? WHERE id = ?", [newHash, userId]);
-
-    // Invalidate all refresh tokens
-    await pool.query("DELETE FROM refresh_tokens WHERE user_id = ?", [userId]);
 
     res.json({ success: true, message: "Password reset successful. Please log in with your new password." });
   } catch (err) {

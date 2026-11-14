@@ -1,12 +1,11 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import multer from "multer";
-import path from "path";
 import fs from "fs";
 import { authenticateAdmin } from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.js";
 import { loginLimiters } from "../middleware/loginLimiter.js";
 import { uploadDir } from "../utils/paths.js";
+import { imageUploader, verifyImageContent } from "../utils/imageUpload.js";
 import { maskSettingMap, changedSettingEntries } from "../utils/settings.js";
 import { adminLogin, adminMe, adminUpdate } from "../controllers/admin-auth.controller.js";
 import {
@@ -37,24 +36,7 @@ import {
   toggleUserPremium,
 } from "../controllers/admin.controller.js";
 
-// Ensure receipts directory exists
-const RECEIPTS_DIR = uploadDir("receipts");
-if (!fs.existsSync(RECEIPTS_DIR)) fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
-
-const receiptUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, RECEIPTS_DIR),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname);
-      cb(null, `receipt_${Date.now()}${ext}`);
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("Only image files allowed."));
-  },
-});
+const receiptUpload = imageUploader("receipts", "receipt_");
 
 const router = Router();
 
@@ -101,7 +83,7 @@ router.get("/payouts", getPayouts);
 router.patch("/payouts/:id", updatePayout);
 
 // Receipt upload for payouts
-router.post("/payouts/:id/receipt", receiptUpload.single("receipt"), async (req, res) => {
+router.post("/payouts/:id/receipt", receiptUpload.single("receipt"), verifyImageContent, async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: "No image provided." });
     const receiptUrl = `/receipts/${req.file.filename}`;

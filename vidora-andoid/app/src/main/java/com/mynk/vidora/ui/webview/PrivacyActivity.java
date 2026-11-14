@@ -19,7 +19,7 @@ import retrofit2.Response;
 public class PrivacyActivity extends AppCompatActivity {
 
     private WebView webView;
-    private static final String DEFAULT_URL = "http://10.59.203.78:8080/privacy";
+    private static final String DEFAULT_URL = com.mynk.vidora.utils.Constants.WEB_BASE_URL + "privacy";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

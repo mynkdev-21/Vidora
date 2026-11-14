@@ -17,7 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Vidora"
-        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
 
         <!-- Fix AdServices config conflict between AdMob and Firebase -->
@@ -26,10 +26,10 @@
             android:resource="@xml/gma_ad_services_config"
             tools:replace="android:resource" />
 
-        <!-- AdMob App ID (Test ID — update in Constants.java for production) -->
+        <!-- AdMob App ID: Google's test app in debug, the real app in release (app/build.gradle.kts) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-9387570944207452~6751708815" />
+            android:value="${admobAppId}" />
 
         <!-- Splash (Launcher) -->
         <activity
@@ -66,13 +66,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="vidora" android:host="download" />
             </intent-filter>
-            <!-- HTTP deep link: http://IP:8080/v/TOKEN -->
+            <!-- Web share links: https://<web host>/v/TOKEN (host from app/build.gradle.kts).
+                 Previously matched /v/ on ANY host. -->
             <intent-filter android:autoVerify="false">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="http" android:pathPrefix="/v/" />
-                <data android:scheme="https" android:pathPrefix="/v/" />
+                <data android:scheme="https" />
+                <data android:scheme="http" />
+                <data android:host="${webHost}" />
+                <data android:pathPrefix="/v/" />
             </intent-filter>
         </activity>
 

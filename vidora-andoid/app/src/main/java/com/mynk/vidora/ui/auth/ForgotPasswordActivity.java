@@ -18,7 +18,7 @@ import retrofit2.Response;
 
 public class ForgotPasswordActivity extends AppCompatActivity {
 
-    private static final String DEFAULT_URL = "http://10.59.203.78:8080/forgot-password";
+    private static final String DEFAULT_URL = com.mynk.vidora.utils.Constants.WEB_BASE_URL + "forgot-password";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

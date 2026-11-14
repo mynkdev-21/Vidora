@@ -46,14 +46,14 @@ function AdminProfile() {
     if (newPassword && newPassword !== confirmPassword) {
       setMessage("Passwords don't match."); setMessageType("error"); return;
     }
-    if (newPassword && !currentPassword) {
-      setMessage("Current password required to set new password."); setMessageType("error"); return;
+    if (!currentPassword) {
+      setMessage("Enter your current password to change your email or password."); setMessageType("error"); return;
     }
 
     setSaving(true);
     try {
-      const body: any = { email };
-      if (newPassword) { body.currentPassword = currentPassword; body.newPassword = newPassword; }
+      const body: any = { email, currentPassword };
+      if (newPassword) body.newPassword = newPassword;
       await adminFetch("/api/admin/auth/update", { method: "PATCH", body: JSON.stringify(body) });
       setMessage("Profile updated successfully!"); setMessageType("success");
       setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");

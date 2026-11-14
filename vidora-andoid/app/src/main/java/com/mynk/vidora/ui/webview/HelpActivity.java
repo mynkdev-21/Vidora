@@ -19,7 +19,7 @@ import retrofit2.Response;
 public class HelpActivity extends AppCompatActivity {
 
     private WebView webView;
-    private static final String DEFAULT_URL = "http://10.59.203.78:8080/help";
+    private static final String DEFAULT_URL = com.mynk.vidora.utils.Constants.WEB_BASE_URL + "help";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
