@@ -1,9 +1,9 @@
-import { exec } from "child_process";
+import { execFile } from "child_process";
 import { promisify } from "util";
 import path from "path";
 import fs from "fs";
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Generates a thumbnail from a video file using ffmpeg.
@@ -26,10 +26,15 @@ export async function generateThumbnail(videoPath, outputDir, filename) {
     const outputPath = path.join(outputDir, thumbFilename);
 
     // Generate thumbnail: capture frame at 1 second, scale to 320x180
-    await execAsync(
-      `ffmpeg -i "${videoPath}" -ss 00:00:01 -vframes 1 -vf "scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2:color=black" -q:v 3 -y "${outputPath}"`,
-      { timeout: 15000 } // 15 sec timeout
-    );
+    // execFile: arguments are passed directly to ffmpeg, never through a shell.
+    await execFileAsync("ffmpeg", [
+      "-i", videoPath,
+      "-ss", "00:00:01",
+      "-vframes", "1",
+      "-vf", "scale=320:180:force_original_aspect_ratio=decrease,pad=320:180:(ow-iw)/2:(oh-ih)/2:color=black",
+      "-q:v", "3",
+      "-y", outputPath,
+    ], { timeout: 15000 });
 
     // Verify file was created
     if (fs.existsSync(outputPath)) {
@@ -39,7 +44,8 @@ export async function generateThumbnail(videoPath, outputDir, filename) {
 
     return null;
   } catch (err) {
-    console.error(`⚠️ Thumbnail generation failed for ${videoPath}:`, err.message);
+    const reason = (err.stderr || err.message || "").trim().split("\n").pop();
+    console.error(`⚠️ Thumbnail generation failed for ${path.basename(videoPath)}: ${reason}`);
     return null;
   }
 }

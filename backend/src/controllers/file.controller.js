@@ -1,14 +1,13 @@
 import { v4 as uuidv4 } from "uuid";
-import path from "path";
 import fs from "fs";
 import pool from "../db/connection.js";
+import { config } from "../config.js";
 import { generateThumbnail, isVideo } from "../utils/thumbnail.js";
+import { uploadDir } from "../utils/paths.js";
 
 // ── Ensure directories exist ─────────────────────────────────────────────────
-const UPLOADS_DIR = path.resolve("uploads");
-const THUMBS_DIR = path.resolve("uploads/thumbnails");
-if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-if (!fs.existsSync(THUMBS_DIR)) fs.mkdirSync(THUMBS_DIR, { recursive: true });
+const THUMBS_DIR = uploadDir("thumbnails");
+fs.mkdirSync(THUMBS_DIR, { recursive: true });
 
 // ── GET /api/files/trending (PUBLIC) ─────────────────────────────────────────
 // Returns random active files from ALL users (for app home screen)
@@ -141,23 +140,15 @@ export async function getFile(req, res, next) {
 }
 
 // ── POST /api/files ──────────────────────────────────────────────────────────
-// (Registers file metadata — actual upload handled separately via storage service)
-export async function createFile(req, res, next) {
-  try {
-    const { original_name, stored_name, mime_type, size_bytes, storage_path, public_url } = req.body;
-
-    const id = uuidv4();
-    await pool.query(
-      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [id, req.user.id, original_name, stored_name, mime_type, size_bytes || 0, storage_path, public_url || null]
-    );
-
-    const [rows] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
-    res.status(201).json({ success: true, message: "File registered.", data: { file: rows[0] } });
-  } catch (err) {
-    next(err);
-  }
+// Removed: this legacy endpoint let clients register arbitrary stored_name /
+// storage_path values (path traversal, audit finding F2) and is not used by
+// any client. Files are created only by multipart upload, where the server
+// generates the storage name.
+export async function createFile(_req, res) {
+  res.status(410).json({
+    success: false,
+    message: "Metadata-only file registration has been removed. Upload files with POST /api/files/upload.",
+  });
 }
 
 // ── DELETE /api/files/:id ────────────────────────────────────────────────────
@@ -246,112 +237,60 @@ export async function copyFile(req, res, next) {
   }
 }
 
-// Handles real multipart file upload via multer
+/**
+ * Registers a file multer has already written under a server-generated name
+ * (req.file.filename), generates a thumbnail for videos and hands the file to
+ * the active storage provider. Shared by dashboard/app and Telegram uploads.
+ */
+async function storeUploadedFile(userId, uploaded) {
+  const { originalname, mimetype, size, filename, path: filePath } = uploaded;
+  const id = uuidv4();
+
+  let thumbnailUrl = null;
+  if (isVideo(mimetype)) {
+    const thumbFilename = await generateThumbnail(filePath, THUMBS_DIR, filename.replace(/\.[^.]+$/, ""));
+    if (thumbFilename) thumbnailUrl = `/thumbnails/${thumbFilename}`;
+  }
+
+  const { uploadToStorage } = await import("../utils/storage.js");
+  let publicUrl = `${config.shareUrl}/uploads/${filename}`;
+  try {
+    const result = await uploadToStorage(filePath, filename);
+    if (result.publicUrl) publicUrl = result.publicUrl;
+  } catch (e) {
+    // The file is already on local disk; keep serving it from there.
+    console.warn("Storage upload fallback to local:", e.message);
+  }
+
+  const originalName = String(originalname || "file").slice(0, 255);
+  await pool.query(
+    `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, thumbnail_url, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
+    [id, userId, originalName, filename, String(mimetype || "application/octet-stream").slice(0, 100), size, `uploads/${filename}`, publicUrl, thumbnailUrl]
+  );
+
+  const [rows] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
+  notifySubscribers(userId, originalName, id, thumbnailUrl).catch(() => {});
+  return rows[0];
+}
+
+// ── POST /api/files/upload ───────────────────────────────────────────────────
 export async function uploadFile(req, res, next) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file provided." });
-    }
-
-    const { originalname, mimetype, size, filename, path: filePath } = req.file;
-    const id = uuidv4();
-    const storagePath = `uploads/${filename}`;
-
-    // Generate thumbnail for video files
-    let thumbnailUrl = null;
-    if (isVideo(mimetype)) {
-      const videoFullPath = path.resolve(storagePath);
-      const thumbFilename = await generateThumbnail(videoFullPath, THUMBS_DIR, filename.replace(/\.[^.]+$/, ""));
-      if (thumbFilename) {
-        thumbnailUrl = `/thumbnails/${thumbFilename}`;
-      }
-    }
-
-    // Upload to active storage provider
-    const { uploadToStorage } = await import("../utils/storage.js");
-    let publicUrl = `${process.env.SHARE_URL || process.env.BASE_URL || "http://localhost:5001"}/uploads/${filename}`;
-    try {
-      const result = await uploadToStorage(path.resolve(storagePath), filename);
-      if (result.publicUrl) publicUrl = result.publicUrl;
-    } catch (e) {
-      // Fallback: file is already on disk from multer, continue with local
-      console.warn("Storage upload fallback to local:", e.message);
-    }
-
-    await pool.query(
-      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, thumbnail_url, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [id, req.user.id, originalname, filename, mimetype || "application/octet-stream", size, storagePath, publicUrl, thumbnailUrl]
-    );
-
-    const [rows] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
-    res.status(201).json({ success: true, message: "File uploaded.", data: { file: rows[0] } });
-
-    // Notify subscribers (non-blocking)
-    notifySubscribers(req.user.id, originalname, id, thumbnailUrl).catch(() => {});
+    if (!req.file) return res.status(400).json({ success: false, message: "No file provided." });
+    const file = await storeUploadedFile(req.user.id, req.file);
+    res.status(201).json({ success: true, message: "File uploaded.", data: { file } });
   } catch (err) {
     next(err);
   }
 }
-// ── POST /api/files/bot-upload ─ internal bot endpoint (no JWT, uses user API key) ──
+
+// ── POST /api/files/bot-upload ─ Telegram bot; req.user set by authenticateBotUser ──
 export async function botUploadFile(req, res, next) {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: "No file provided." });
-    }
-
-    // Verify the user API key passed by the bot
-    const userApiKey = req.headers["x-user-api-key"];
-    const userId     = req.headers["x-bot-user-id"];
-
-    if (!userApiKey || !userId) {
-      return res.status(401).json({ success: false, message: "Missing bot auth headers." });
-    }
-
-    // Validate: api_key must belong to userId
-    const [rows] = await pool.query(
-      "SELECT user_id FROM user_api_keys WHERE api_key = ? AND user_id = ?",
-      [userApiKey, userId]
-    );
-    if (!rows.length) {
-      return res.status(403).json({ success: false, message: "Invalid user API key." });
-    }
-
-    const { originalname, mimetype, size, filename } = req.file;
-    const id          = uuidv4();
-    const storagePath = `uploads/${filename}`;
-
-    // Generate thumbnail for video files
-    let thumbnailUrl = null;
-    if (isVideo(mimetype)) {
-      const videoFullPath = path.resolve(storagePath);
-      const thumbFilename = await generateThumbnail(videoFullPath, THUMBS_DIR, filename.replace(/\.[^.]+$/, ""));
-      if (thumbFilename) {
-        thumbnailUrl = `/thumbnails/${thumbFilename}`;
-      }
-    }
-
-    // Upload to active storage provider
-    const { uploadToStorage } = await import("../utils/storage.js");
-    let publicUrl = `${process.env.SHARE_URL || process.env.BASE_URL || "http://localhost:5001"}/uploads/${filename}`;
-    try {
-      const result = await uploadToStorage(path.resolve(storagePath), filename);
-      if (result.publicUrl) publicUrl = result.publicUrl;
-    } catch (e) {
-      console.warn("Storage upload fallback to local:", e.message);
-    }
-
-    await pool.query(
-      `INSERT INTO files (id, user_id, original_name, stored_name, mime_type, size_bytes, storage_path, public_url, thumbnail_url, status)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      [id, userId, originalname, filename, mimetype || "application/octet-stream", size, storagePath, publicUrl, thumbnailUrl]
-    );
-
-    const [fileRows] = await pool.query("SELECT * FROM files WHERE id = ?", [id]);
-    res.status(201).json({ success: true, message: "File uploaded via bot.", data: { file: fileRows[0] } });
-
-    // Notify subscribers (non-blocking)
-    notifySubscribers(userId, originalname, id, thumbnailUrl).catch(() => {});
+    if (!req.file) return res.status(400).json({ success: false, message: "No file provided." });
+    const file = await storeUploadedFile(req.user.id, req.file);
+    res.status(201).json({ success: true, message: "File uploaded via bot.", data: { file } });
   } catch (err) {
     next(err);
   }

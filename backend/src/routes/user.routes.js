@@ -8,9 +8,10 @@ import { authenticate, authorize } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { getProfile, updateProfile, changePassword, listUsers, getApiKey } from "../controllers/user.controller.js";
 import { getPaymentMethods, savePaymentMethod } from "../controllers/payment.controller.js";
+import { uploadDir } from "../utils/paths.js";
 
 // Ensure avatars directory exists
-const AVATARS_DIR = path.resolve("uploads/avatars");
+const AVATARS_DIR = uploadDir("avatars");
 if (!fs.existsSync(AVATARS_DIR)) fs.mkdirSync(AVATARS_DIR, { recursive: true });
 
 const avatarUpload = multer({

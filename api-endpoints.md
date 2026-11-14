@@ -204,8 +204,8 @@
 ## Headers Reference
 
 ```
-X-API-Key: vdr_live_f9a2c84e1b3d7056ae4f8c2190d3b5e7   (frontend)
-X-API-Key: vdr_live_3c7e1a9f2b4d8056cf5e0a1b7d2c4f8e   (mobile)
+X-API-Key: <WEB_CLIENT_KEY>   (frontend)
+X-API-Key: <MOBILE_CLIENT_KEY>   (mobile)
 Authorization: Bearer <access_token>                    (JWT)
 Content-Type: application/json
 ```

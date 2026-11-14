@@ -5,6 +5,8 @@ import path from "path";
 import fs from "fs";
 import { authenticateAdmin } from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.js";
+import { uploadDir } from "../utils/paths.js";
+import { maskSettingMap, changedSettingEntries } from "../utils/settings.js";
 import { adminLogin, adminMe, adminUpdate } from "../controllers/admin-auth.controller.js";
 import {
   getStats,
@@ -35,7 +37,7 @@ import {
 } from "../controllers/admin.controller.js";
 
 // Ensure receipts directory exists
-const RECEIPTS_DIR = path.resolve("uploads/receipts");
+const RECEIPTS_DIR = uploadDir("receipts");
 if (!fs.existsSync(RECEIPTS_DIR)) fs.mkdirSync(RECEIPTS_DIR, { recursive: true });
 
 const receiptUpload = multer({
@@ -190,14 +192,15 @@ router.get("/system-info", (req, res) => {
 router.get("/storage", async (req, res) => {
   try {
     const pool = (await import("../db/connection.js")).default;
-    const [rows] = await pool.query("SELECT id, value FROM app_settings WHERE id LIKE 'storage_%'");
-    const settings = {};
-    rows.forEach(r => { settings[r.id] = r.value; });
+    const [rows] = await pool.query("SELECT id, value FROM app_settings WHERE id LIKE 'storage\\_%'");
+    const raw = {};
+    rows.forEach(r => { raw[r.id] = r.value; });
+    const settings = maskSettingMap(raw); // credentials never leave the server in clear text
 
     // Get local storage usage
     const fs = (await import("fs")).default;
     const pathMod = (await import("path")).default;
-    const uploadsDir = pathMod.resolve("uploads");
+    const uploadsDir = uploadDir("");
     let localUsed = 0;
     let fileCount = 0;
     if (fs.existsSync(uploadsDir)) {
@@ -226,7 +229,7 @@ router.put("/storage", async (req, res) => {
     }
 
     const pool = (await import("../db/connection.js")).default;
-    for (const [key, value] of Object.entries(settings)) {
+    for (const [key, value] of changedSettingEntries(settings)) {
       if (!key.startsWith("storage_")) continue;
       await pool.query(
         "INSERT INTO app_settings (id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?",
@@ -252,7 +255,7 @@ router.post("/storage/test", async (req, res) => {
 
     // Temporarily save settings to test
     const pool = (await import("../db/connection.js")).default;
-    for (const [key, value] of Object.entries(settings || {})) {
+    for (const [key, value] of changedSettingEntries(settings || {})) {
       if (!key.startsWith("storage_")) continue;
       await pool.query(
         "INSERT INTO app_settings (id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?",
@@ -270,11 +273,11 @@ router.post("/storage/test", async (req, res) => {
     // Try a small test upload
     const fs = (await import("fs")).default;
     const pathMod = (await import("path")).default;
-    const testFile = pathMod.resolve("uploads/.storage_test");
+    const testFile = pathMod.join(uploadDir(""), `storage_test_${Date.now()}.txt`);
     fs.writeFileSync(testFile, "vidora-storage-test-" + Date.now());
 
     const { uploadToStorage, deleteFromStorage } = await import("../utils/storage.js");
-    const testName = ".vidora_test_" + Date.now() + ".txt";
+    const testName = "vidora_test_" + Date.now() + ".txt";
     await uploadToStorage(testFile, testName);
     await deleteFromStorage(testName);
     fs.unlinkSync(testFile);

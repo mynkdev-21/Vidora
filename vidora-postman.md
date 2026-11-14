@@ -3,7 +3,7 @@
 ## Setup Variables (Postman Environment)
 ```
 BASE_URL = http://10.95.58.78:5001
-API_KEY = vdr_live_3c7e1a9f2b4d8056cf5e0a1b7d2c4f8e
+API_KEY = <MOBILE_CLIENT_KEY>
 ACCESS_TOKEN = (fill after login)
 ADMIN_TOKEN = (fill after admin login)
 ```

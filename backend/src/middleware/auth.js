@@ -1,5 +1,23 @@
 import jwt from "jsonwebtoken";
 import pool from "../db/connection.js";
+import { config } from "../config.js";
+
+const BANNED_SUPPORT_URL = "https://t.me/vidorasupport";
+
+/** Verifies a user access token. Throws jsonwebtoken errors on failure. */
+export function verifyAccessToken(token) {
+  return jwt.verify(token, config.jwt.secret, { algorithms: ["HS256"] });
+}
+
+function bearerToken(req) {
+  const header = req.headers.authorization;
+  return header && header.startsWith("Bearer ") ? header.slice(7) : null;
+}
+
+async function loadActiveUser(id) {
+  const [rows] = await pool.query("SELECT id, email, role, is_active FROM users WHERE id = ?", [id]);
+  return rows[0] || null;
+}
 
 /**
  * Verifies JWT access token from Authorization: Bearer <token>
@@ -7,32 +25,27 @@ import pool from "../db/connection.js";
  */
 export async function authenticate(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    const token = bearerToken(req);
+    if (!token) {
       return res.status(401).json({ success: false, message: "Access token required." });
     }
 
-    const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
+    const user = await loadActiveUser(decoded.id);
 
-    // Check user still exists and is active
-    const [rows] = await pool.query(
-      "SELECT id, email, role, is_active FROM users WHERE id = ?",
-      [decoded.id]
-    );
-
-    if (!rows.length || !rows[0].is_active) {
+    if (!user || !user.is_active) {
+      const banned = user && !user.is_active;
       return res.status(401).json({
         success: false,
-        message: rows.length && !rows[0].is_active
+        message: banned
           ? "Your account has been banned. Please contact support."
           : "Account not found or deactivated.",
-        code: rows.length && !rows[0].is_active ? "ACCOUNT_BANNED" : undefined,
-        support_url: rows.length && !rows[0].is_active ? "https://t.me/vidorasupport" : undefined,
+        code: banned ? "ACCOUNT_BANNED" : undefined,
+        support_url: banned ? BANNED_SUPPORT_URL : undefined,
       });
     }
 
-    req.user = { id: rows[0].id, email: rows[0].email, role: rows[0].role };
+    req.user = { id: user.id, email: user.email, role: user.role };
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {
@@ -40,6 +53,24 @@ export async function authenticate(req, res, next) {
     }
     return res.status(401).json({ success: false, message: "Invalid access token." });
   }
+}
+
+/**
+ * Like authenticate(), but never rejects: a missing, invalid or expired token
+ * simply leaves req.user undefined. For endpoints that behave differently for
+ * signed-in users but are also open to anonymous ones.
+ */
+export async function optionalAuthenticate(req, _res, next) {
+  const token = bearerToken(req);
+  if (!token) return next();
+  try {
+    const decoded = verifyAccessToken(token);
+    const user = await loadActiveUser(decoded.id);
+    if (user && user.is_active) req.user = { id: user.id, email: user.email, role: user.role };
+  } catch {
+    // Treat as anonymous.
+  }
+  next();
 }
 
 /**

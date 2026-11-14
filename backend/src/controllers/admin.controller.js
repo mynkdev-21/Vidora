@@ -1,3 +1,4 @@
+import { maskSettingRows, changedSettingEntries } from "../utils/settings.js";
 import pool from "../db/connection.js";
 
 // ── GET /api/admin/stats ─────────────────────────────────────────────────────
@@ -523,7 +524,7 @@ export async function deleteMessage(req, res, next) {
 export async function getSettings(req, res, next) {
   try {
     const [rows] = await pool.query("SELECT id, value, updated_at FROM app_settings");
-    res.json({ success: true, data: { settings: rows } });
+    res.json({ success: true, data: { settings: maskSettingRows(rows) } });
   } catch (err) { next(err); }
 }
 
@@ -536,10 +537,12 @@ export async function updateSettings(req, res, next) {
       return res.status(400).json({ success: false, message: "Settings object required." });
     }
 
-    for (const [key, value] of Object.entries(settings)) {
+    for (const [key, value] of changedSettingEntries(settings)) {
+      if (typeof key !== "string" || !/^[a-z0-9_]{1,50}$/.test(key)) continue;
+      const v = value === null || value === undefined ? "" : String(value);
       await pool.query(
         "INSERT INTO app_settings (id, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = ?",
-        [key, value, value]
+        [key, v, v]
       );
     }
 

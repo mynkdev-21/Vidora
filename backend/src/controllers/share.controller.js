@@ -1,6 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
 import pool from "../db/connection.js";
+import { sendStoredFile } from "../utils/media.js";
+
+// Stream URLs are capabilities handed to the player; they must outlive a full
+// playback session because every seek is a new Range request.
+export const STREAM_TOKEN_TTL_SECONDS = 6 * 60 * 60;
 
 // ── Generate a random short token ─────────────────────────────────────────────
 function generateToken() {
@@ -197,13 +202,10 @@ export async function getStreamUrl(req, res, next) {
       return res.status(404).json({ success: false, message: "File not found." });
     }
 
-    // Generate a one-time stream token (expires in 5 minutes)
     const streamToken = crypto.randomBytes(24).toString("hex");
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
     await pool.query(
-      `INSERT INTO stream_tokens (id, file_id, token, expires_at) VALUES (?, ?, ?, ?)`,
-      [uuidv4(), fileRow.id, streamToken, expiresAt]
+      `INSERT INTO stream_tokens (id, file_id, token, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL ? SECOND))`,
+      [uuidv4(), fileRow.id, streamToken, STREAM_TOKEN_TTL_SECONDS]
     );
 
     // Return direct video URL (not m3u8)
@@ -212,7 +214,7 @@ export async function getStreamUrl(req, res, next) {
       data: {
         stream_url: `/api/stream/${streamToken}/video`,
         mime_type:   fileRow.mime_type || "video/mp4",
-        expires_in:  300,
+        expires_in:  STREAM_TOKEN_TTL_SECONDS,
       },
     });
   } catch (err) {
@@ -220,152 +222,27 @@ export async function getStreamUrl(req, res, next) {
   }
 }
 
-// ── GET /api/stream/:streamToken/playlist.m3u8  (PUBLIC — serves HLS-like playlist) ──
-// Validates stream token, serves video as single-segment m3u8
-export async function servePlaylist(req, res, next) {
+// ── GET /api/stream/:streamToken/video  (no API key — the token is the capability) ──
+// Serves the file behind a stream token from GET /api/share/stream/:token, with
+// HTTP Range support so players can seek.
+export async function serveStreamVideo(req, res, next) {
   try {
     const { streamToken } = req.params;
-
-    // Validate & check expiry
-    const [rows] = await pool.query(
-      `SELECT st.file_id, st.expires_at, f.stored_name, f.mime_type
-       FROM stream_tokens st
-       JOIN files f ON f.id = st.file_id
-       WHERE st.token = ? AND st.expires_at > NOW()`,
-      [streamToken]
-    );
-
-    if (!rows.length) {
-      return res.status(410).send("#EXTM3U\n#EXT-X-ERROR:Token expired or invalid\n#EXT-X-ENDLIST");
+    if (!/^[0-9a-f]{48}$/.test(streamToken)) {
+      return res.status(404).json({ success: false, message: "Stream not found." });
     }
 
-    const file = rows[0];
-
-    // Generate a segment token (valid 5 min, one-time use for the actual file)
-    const segToken = crypto.randomBytes(20).toString("hex");
-    const segExpires = new Date(Date.now() + 5 * 60 * 1000);
-
-    await pool.query(
-      `INSERT INTO stream_tokens (id, file_id, token, expires_at) VALUES (?, ?, ?, ?)`,
-      [uuidv4(), file.file_id, segToken, segExpires]
-    );
-
-    // Serve m3u8 playlist pointing to segment endpoint
-    const playlist = [
-      "#EXTM3U",
-      "#EXT-X-VERSION:3",
-      "#EXT-X-TARGETDURATION:99999",
-      "#EXT-X-MEDIA-SEQUENCE:0",
-      "#EXTINF:99999.0,",
-      `/api/stream/${segToken}/segment.ts`,
-      "#EXT-X-ENDLIST",
-    ].join("\n");
-
-    res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.setHeader("Pragma", "no-cache");
-    res.send(playlist);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// ── GET /api/stream/:streamToken/segment.ts  (PUBLIC — serves actual video bytes) ──
-// One-time use token — after serving, token is invalidated
-export async function serveSegment(req, res, next) {
-  try {
-    const { streamToken } = req.params;
-
     const [rows] = await pool.query(
-      `SELECT st.id AS token_id, st.file_id, f.stored_name, f.mime_type, f.original_name
-       FROM stream_tokens st
-       JOIN files f ON f.id = st.file_id
-       WHERE st.token = ? AND st.expires_at > NOW()`,
+      `SELECT f.id, f.stored_name, f.mime_type
+       FROM stream_tokens st JOIN files f ON f.id = st.file_id
+       WHERE st.token = ? AND st.expires_at > NOW() AND f.status = 'active'`,
       [streamToken]
     );
-
     if (!rows.length) {
       return res.status(410).json({ success: false, message: "Stream token expired." });
     }
 
-    const file = rows[0];
-
-    // Invalidate token after use (one-time)
-    pool.query("DELETE FROM stream_tokens WHERE id = ?", [file.token_id]).catch(() => {});
-
-    // Serve file
-    const fs = await import("fs");
-    const path = await import("path");
-    const fullPath = path.default.resolve(`uploads/${file.stored_name}`);
-
-    if (!fs.default.existsSync(fullPath)) {
-      return res.status(404).json({ success: false, message: "File not found on disk." });
-    }
-
-    const stat = fs.default.statSync(fullPath);
-    res.setHeader("Content-Type", file.mime_type || "video/mp4");
-    res.setHeader("Content-Length", stat.size);
-    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-
-    const stream = fs.default.createReadStream(fullPath);
-    stream.pipe(res);
-  } catch (err) {
-    next(err);
-  }
-}
-
-// ── GET /api/share/media/:fileId  (LEGACY — signed URL approach, kept for compatibility) ──
-export async function serveMedia(req, res, next) {
-  try {
-    const { fileId } = req.params;
-    const { expires, sig } = req.query;
-
-    if (!expires || !sig) {
-      return res.status(403).json({ success: false, message: "Access denied. Missing signature." });
-    }
-
-    const expiresAt = parseInt(expires, 10);
-    if (isNaN(expiresAt) || Date.now() > expiresAt) {
-      return res.status(410).json({ success: false, message: "Link expired." });
-    }
-
-    const payload = `${fileId}:${expiresAt}`;
-    const expectedSig = crypto
-      .createHmac("sha256", process.env.JWT_SECRET || "secret")
-      .update(payload)
-      .digest("hex")
-      .slice(0, 24);
-
-    if (sig !== expectedSig) {
-      return res.status(403).json({ success: false, message: "Invalid signature." });
-    }
-
-    const [rows] = await pool.query(
-      "SELECT stored_name, mime_type, original_name FROM files WHERE id = ? AND status = 'active'",
-      [fileId]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ success: false, message: "File not found." });
-    }
-
-    const file = rows[0];
-    const fs = await import("fs");
-    const path = await import("path");
-    const fullPath = path.default.resolve(`uploads/${file.stored_name}`);
-
-    if (!fs.default.existsSync(fullPath)) {
-      return res.status(404).json({ success: false, message: "File not found on disk." });
-    }
-
-    const stat = fs.default.statSync(fullPath);
-    res.setHeader("Content-Type", file.mime_type);
-    res.setHeader("Content-Length", stat.size);
-    res.setHeader("Cache-Control", "no-store, private");
-    res.setHeader("Content-Disposition", `inline; filename="${file.original_name}"`);
-
-    fs.default.createReadStream(fullPath).pipe(res);
+    await sendStoredFile(req, res, rows[0]);
   } catch (err) {
     next(err);
   }

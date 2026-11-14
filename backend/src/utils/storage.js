@@ -1,26 +1,29 @@
 /**
- * Storage Adapter — supports Local, Cloudflare R2, Backblaze B2, BunnyCDN, Custom S3
- * Active provider is read from app_settings table.
- * All providers expose: upload(filePath, storedName), delete(storedName), getStream(storedName)
+ * Storage adapter — Local, Cloudflare R2, Backblaze B2, BunnyCDN, custom S3.
+ * The active provider and its credentials are read from app_settings.
+ *
+ * All local paths go through resolveUploadPath(); all object keys go through
+ * objectKey(). Uploads stream from disk (never buffer the whole file), and
+ * remote reads support HTTP Range so video seeking works on every provider.
  */
-
 import fs from "fs";
 import path from "path";
+import { Readable } from "stream";
 import pool from "../db/connection.js";
+import { resolveUploadPath, uploadDir, isSafeStoredName, UPLOAD_SUBFOLDERS } from "./paths.js";
+import { parseRange } from "./media.js";
 
-const UPLOADS_DIR = path.resolve("uploads");
-
-// ── Cache settings for 60s to avoid DB hit on every request ───────────────────
+// ── Settings cache (60 s) ─────────────────────────────────────────────────────
 let cachedSettings = null;
 let cacheTime = 0;
-const CACHE_TTL = 60_000; // 1 minute
+const CACHE_TTL = 60_000;
 
 async function getStorageSettings() {
   if (cachedSettings && Date.now() - cacheTime < CACHE_TTL) return cachedSettings;
   try {
-    const [rows] = await pool.query("SELECT id, value FROM app_settings WHERE id LIKE 'storage_%'");
+    const [rows] = await pool.query("SELECT id, value FROM app_settings WHERE id LIKE 'storage\\_%'");
     const settings = {};
-    rows.forEach(r => { settings[r.id] = r.value; });
+    rows.forEach((r) => { settings[r.id] = r.value; });
     cachedSettings = settings;
     cacheTime = Date.now();
     return settings;
@@ -34,109 +37,72 @@ export function clearStorageCache() {
   cacheTime = 0;
 }
 
-// ── Get active provider ───────────────────────────────────────────────────────
 export async function getActiveProvider() {
   const settings = await getStorageSettings();
   return settings.storage_provider || "local";
 }
 
+/** Object key for cloud providers; refuses anything that is not a single safe segment. */
+function objectKey(storedName, subfolder) {
+  if (!UPLOAD_SUBFOLDERS.includes(subfolder) || !isSafeStoredName(storedName)) {
+    throw new Error("Unsafe storage key.");
+  }
+  return subfolder ? `${subfolder}/${storedName}` : storedName;
+}
+
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
-// filePath = absolute path to temp file on disk (from multer)
-// storedName = unique filename (uuid.ext)
-// subfolder = "" for files, "thumbnails" for thumbs
+// filePath: absolute path of the file multer wrote; storedName: server-generated.
 export async function uploadToStorage(filePath, storedName, subfolder = "") {
   const provider = await getActiveProvider();
-
-  if (provider === "local") {
-    return uploadLocal(filePath, storedName, subfolder);
-  }
+  if (provider === "local") return uploadLocal(filePath, storedName, subfolder);
 
   const settings = await getStorageSettings();
-
-  if (provider === "r2" || provider === "s3") {
+  if (provider === "r2" || provider === "s3" || provider === "b2") {
     return uploadS3Compatible(filePath, storedName, subfolder, settings, provider);
   }
-  if (provider === "b2") {
-    return uploadS3Compatible(filePath, storedName, subfolder, settings, "b2");
-  }
-  if (provider === "bunny") {
-    return uploadBunny(filePath, storedName, subfolder, settings);
-  }
-
-  // Fallback to local
+  if (provider === "bunny") return uploadBunny(filePath, storedName, subfolder, settings);
   return uploadLocal(filePath, storedName, subfolder);
 }
 
-// ── GET STREAM (for serving files) ────────────────────────────────────────────
-// Returns { stream, size, contentType } or throws
-export async function getFileStream(storedName, subfolder = "") {
+// ── READ ──────────────────────────────────────────────────────────────────────
+/**
+ * Opens a stored object from the active cloud provider.
+ * @param rangeHeader raw HTTP Range header (optional)
+ * @returns null if not found, or
+ *   { stream, size, partial, start, end } — stream is a Node Readable, or
+ *   { unsatisfiable: true, size }
+ */
+export async function openRemoteObject(storedName, subfolder = "", rangeHeader) {
   const provider = await getActiveProvider();
+  if (provider === "local") return null;
+  const settings = await getStorageSettings();
+  const key = objectKey(storedName, subfolder);
 
-  // Check if file exists locally first (for backward compat with old files)
-  const localPath = subfolder
-    ? path.join(UPLOADS_DIR, subfolder, storedName)
-    : path.join(UPLOADS_DIR, storedName);
+  if (provider === "r2" || provider === "s3" || provider === "b2") {
+    return openS3Compatible(key, settings, provider, rangeHeader);
+  }
+  if (provider === "bunny") return openBunny(key, settings, rangeHeader);
+  return null;
+}
 
+/** Whole-object stream (local first). Kept for callers that don't need ranges. */
+export async function getFileStream(storedName, subfolder = "") {
+  const localPath = resolveUploadPath(storedName, subfolder);
+  if (!localPath) return null;
   if (fs.existsSync(localPath)) {
     const stat = fs.statSync(localPath);
     return { stream: fs.createReadStream(localPath), size: stat.size, localPath };
   }
-
-  // If not local, fetch from cloud
-  if (provider === "local") {
-    return null; // File not found
-  }
-
-  const settings = await getStorageSettings();
-
-  if (provider === "r2" || provider === "s3" || provider === "b2") {
-    return getStreamS3Compatible(storedName, subfolder, settings, provider);
-  }
-  if (provider === "bunny") {
-    return getStreamBunny(storedName, subfolder, settings);
-  }
-
-  return null;
+  return openRemoteObject(storedName, subfolder);
 }
 
-// ── GET STREAM WITH RANGE SUPPORT ─────────────────────────────────────────────
-export async function getFileStreamRange(storedName, subfolder = "", start, end) {
-  const localPath = subfolder
-    ? path.join(UPLOADS_DIR, subfolder, storedName)
-    : path.join(UPLOADS_DIR, storedName);
-
-  if (fs.existsSync(localPath)) {
-    const stat = fs.statSync(localPath);
-    const streamEnd = end !== undefined ? end : stat.size - 1;
-    return {
-      stream: fs.createReadStream(localPath, { start, end: streamEnd }),
-      size: stat.size,
-      start,
-      end: streamEnd,
-      localPath,
-    };
-  }
-
-  // Cloud range support — fetch full and skip (not ideal but works)
-  // For production, use signed URLs with range headers
-  const provider = await getActiveProvider();
-  const settings = await getStorageSettings();
-
-  if (provider === "r2" || provider === "s3" || provider === "b2") {
-    return getStreamS3CompatibleRange(storedName, subfolder, settings, provider, start, end);
-  }
-
-  return null;
-}
-
-// ── DELETE ─────────────────────────────────────────────────────────────────────
+// ── DELETE ────────────────────────────────────────────────────────────────────
 export async function deleteFromStorage(storedName, subfolder = "") {
-  const provider = await getActiveProvider();
-
-  // Always try to delete locally
-  const localPath = subfolder
-    ? path.join(UPLOADS_DIR, subfolder, storedName)
-    : path.join(UPLOADS_DIR, storedName);
+  const localPath = resolveUploadPath(storedName, subfolder);
+  if (!localPath) {
+    console.warn("Refused to delete unsafe stored name.");
+    return false;
+  }
 
   let deletedLocal = false;
   if (fs.existsSync(localPath)) {
@@ -144,54 +110,47 @@ export async function deleteFromStorage(storedName, subfolder = "") {
     deletedLocal = true;
   }
 
-  // Also delete from cloud if provider is not local
-  if (provider !== "local") {
-    const settings = await getStorageSettings();
-    try {
-      if (provider === "r2" || provider === "s3" || provider === "b2") {
-        await deleteS3Compatible(storedName, subfolder, settings, provider);
-      } else if (provider === "bunny") {
-        await deleteBunny(storedName, subfolder, settings);
-      }
-    } catch (e) {
-      // Cloud delete failed — file might not exist there, continue
-    }
-    return true;
-  }
+  const provider = await getActiveProvider();
+  if (provider === "local") return deletedLocal;
 
-  return deletedLocal;
+  const settings = await getStorageSettings();
+  const key = objectKey(storedName, subfolder);
+  try {
+    if (provider === "r2" || provider === "s3" || provider === "b2") {
+      await deleteS3Compatible(key, settings, provider);
+    } else if (provider === "bunny") {
+      await deleteBunny(key, settings);
+    }
+  } catch {
+    // Object may not exist on the cloud provider (uploaded while local).
+  }
+  return true;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// LOCAL PROVIDER
+// LOCAL
 // ══════════════════════════════════════════════════════════════════════════════
 
 function uploadLocal(filePath, storedName, subfolder) {
-  const destDir = subfolder ? path.join(UPLOADS_DIR, subfolder) : UPLOADS_DIR;
-  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
-  const destPath = path.join(destDir, storedName);
-
-  // If file is already in the right place (multer saved it there), skip
-  if (path.resolve(filePath) !== path.resolve(destPath)) {
-    fs.copyFileSync(filePath, destPath);
-  }
-
+  const destPath = resolveUploadPath(storedName, subfolder);
+  if (!destPath) throw new Error("Unsafe storage key.");
+  fs.mkdirSync(uploadDir(subfolder), { recursive: true });
+  // Multer already wrote the file to its final place; only copy if it lives elsewhere.
+  if (path.resolve(filePath) !== destPath) fs.copyFileSync(filePath, destPath);
   const publicUrl = subfolder ? `/${subfolder}/${storedName}` : `/uploads/${storedName}`;
   return { provider: "local", storagePath: destPath, publicUrl };
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
-// S3-COMPATIBLE (R2, B2, Custom S3)
+// S3-COMPATIBLE (R2, B2, custom S3)
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function getS3Client(settings, provider) {
   const { S3Client } = await import("@aws-sdk/client-s3");
-
   let endpoint, region, accessKeyId, secretAccessKey;
 
   if (provider === "r2") {
-    const accountId = settings.storage_r2_account_id || "";
-    endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+    endpoint = `https://${settings.storage_r2_account_id || ""}.r2.cloudflarestorage.com`;
     region = "auto";
     accessKeyId = settings.storage_r2_access_key || "";
     secretAccessKey = settings.storage_r2_secret_key || "";
@@ -201,19 +160,13 @@ async function getS3Client(settings, provider) {
     accessKeyId = settings.storage_b2_key_id || "";
     secretAccessKey = settings.storage_b2_app_key || "";
   } else {
-    // Custom S3
     endpoint = settings.storage_s3_endpoint || "";
     region = settings.storage_s3_region || "us-east-1";
     accessKeyId = settings.storage_s3_access_key || "";
     secretAccessKey = settings.storage_s3_secret_key || "";
   }
 
-  return new S3Client({
-    endpoint,
-    region,
-    credentials: { accessKeyId, secretAccessKey },
-    forcePathStyle: true,
-  });
+  return new S3Client({ endpoint, region, credentials: { accessKeyId, secretAccessKey }, forcePathStyle: true });
 }
 
 function getBucket(settings, provider) {
@@ -229,143 +182,131 @@ function getPublicBaseUrl(settings, provider) {
 }
 
 async function uploadS3Compatible(filePath, storedName, subfolder, settings, provider) {
-  const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-  const client = await getS3Client(settings, provider);
-  const bucket = getBucket(settings, provider);
-  const key = subfolder ? `${subfolder}/${storedName}` : storedName;
-
-  const fileBuffer = fs.readFileSync(filePath);
+  const { Upload } = await import("@aws-sdk/lib-storage");
   const { default: mime } = await import("mime-types");
-  const contentType = mime.lookup(storedName) || "application/octet-stream";
+  const client = await getS3Client(settings, provider);
+  const key = objectKey(storedName, subfolder);
 
-  await client.send(new PutObjectCommand({
-    Bucket: bucket,
-    Key: key,
-    Body: fileBuffer,
-    ContentType: contentType,
-  }));
+  // Multipart, streamed from disk — memory use is bounded by partSize × queueSize.
+  const upload = new Upload({
+    client,
+    params: {
+      Bucket: getBucket(settings, provider),
+      Key: key,
+      Body: fs.createReadStream(filePath),
+      ContentType: mime.lookup(storedName) || "application/octet-stream",
+    },
+    partSize: 16 * 1024 * 1024,
+    queueSize: 4,
+  });
+  await upload.done();
 
   const baseUrl = getPublicBaseUrl(settings, provider);
   const publicUrl = baseUrl ? `${baseUrl.replace(/\/$/, "")}/${key}` : key;
-
-  // Remove local temp file if it's in uploads (multer put it there)
-  const localPath = subfolder
-    ? path.join(UPLOADS_DIR, subfolder, storedName)
-    : path.join(UPLOADS_DIR, storedName);
-  if (fs.existsSync(localPath) && path.resolve(filePath) === path.resolve(localPath)) {
-    // Keep local copy as cache? Or delete to save space:
-    // fs.unlinkSync(localPath); // uncomment to save disk space
-  }
-
   return { provider, storagePath: key, publicUrl };
 }
 
-async function getStreamS3Compatible(storedName, subfolder, settings, provider) {
-  const { GetObjectCommand } = await import("@aws-sdk/client-s3");
+async function openS3Compatible(key, settings, provider, rangeHeader) {
+  const { GetObjectCommand, HeadObjectCommand } = await import("@aws-sdk/client-s3");
   const client = await getS3Client(settings, provider);
-  const bucket = getBucket(settings, provider);
-  const key = subfolder ? `${subfolder}/${storedName}` : storedName;
+  const Bucket = getBucket(settings, provider);
 
-  const response = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-  return {
-    stream: response.Body,
-    size: response.ContentLength,
-  };
-}
+  let size;
+  try {
+    size = (await client.send(new HeadObjectCommand({ Bucket, Key: key }))).ContentLength;
+  } catch (err) {
+    if (err?.$metadata?.httpStatusCode === 404 || err?.name === "NotFound") return null;
+    throw err;
+  }
 
-async function getStreamS3CompatibleRange(storedName, subfolder, settings, provider, start, end) {
-  const { GetObjectCommand } = await import("@aws-sdk/client-s3");
-  const client = await getS3Client(settings, provider);
-  const bucket = getBucket(settings, provider);
-  const key = subfolder ? `${subfolder}/${storedName}` : storedName;
-
-  // First get size with HEAD
-  const { HeadObjectCommand } = await import("@aws-sdk/client-s3");
-  const head = await client.send(new HeadObjectCommand({ Bucket: bucket, Key: key }));
-  const totalSize = head.ContentLength;
-  const rangeEnd = end !== undefined ? end : totalSize - 1;
+  const range = parseRange(rangeHeader, size);
+  if (range === "unsatisfiable") return { unsatisfiable: true, size };
 
   const response = await client.send(new GetObjectCommand({
-    Bucket: bucket,
+    Bucket,
     Key: key,
-    Range: `bytes=${start}-${rangeEnd}`,
+    ...(range ? { Range: `bytes=${range.start}-${range.end}` } : {}),
   }));
-
-  return {
-    stream: response.Body,
-    size: totalSize,
-    start,
-    end: rangeEnd,
-  };
+  return range
+    ? { stream: response.Body, size, partial: true, start: range.start, end: range.end }
+    : { stream: response.Body, size, partial: false };
 }
 
-async function deleteS3Compatible(storedName, subfolder, settings, provider) {
+async function deleteS3Compatible(key, settings, provider) {
   const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
   const client = await getS3Client(settings, provider);
-  const bucket = getBucket(settings, provider);
-  const key = subfolder ? `${subfolder}/${storedName}` : storedName;
-
-  await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
-  return true;
+  await client.send(new DeleteObjectCommand({ Bucket: getBucket(settings, provider), Key: key }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
 // BUNNYCDN STORAGE
 // ══════════════════════════════════════════════════════════════════════════════
 
-async function uploadBunny(filePath, storedName, subfolder, settings) {
-  const storageZone = settings.storage_bunny_zone || "";
-  const apiKey = settings.storage_bunny_api_key || "";
+function bunnyEndpoint(key, settings) {
   const region = settings.storage_bunny_region || ""; // empty = Falkenstein
   const hostname = region ? `${region}.storage.bunnycdn.com` : "storage.bunnycdn.com";
-  const filePath2 = subfolder ? `${subfolder}/${storedName}` : storedName;
+  return `https://${hostname}/${settings.storage_bunny_zone || ""}/${key}`;
+}
 
-  const fileBuffer = fs.readFileSync(filePath);
+async function uploadBunny(filePath, storedName, subfolder, settings, fetchImpl = fetch) {
+  const key = objectKey(storedName, subfolder);
+  const { size } = fs.statSync(filePath);
 
-  const response = await fetch(`https://${hostname}/${storageZone}/${filePath2}`, {
+  const response = await fetchImpl(bunnyEndpoint(key, settings), {
     method: "PUT",
-    headers: { AccessKey: apiKey, "Content-Type": "application/octet-stream" },
-    body: fileBuffer,
+    headers: {
+      AccessKey: settings.storage_bunny_api_key || "",
+      "Content-Type": "application/octet-stream",
+      "Content-Length": String(size),
+    },
+    body: fs.createReadStream(filePath), // streamed, not buffered
+    duplex: "half",
   });
-
   if (!response.ok) throw new Error(`BunnyCDN upload failed: ${response.status}`);
 
-  const cdnUrl = settings.storage_bunny_cdn_url || `https://${storageZone}.b-cdn.net`;
-  const publicUrl = `${cdnUrl.replace(/\/$/, "")}/${filePath2}`;
-
-  return { provider: "bunny", storagePath: filePath2, publicUrl };
+  const cdnUrl = settings.storage_bunny_cdn_url || `https://${settings.storage_bunny_zone || ""}.b-cdn.net`;
+  return { provider: "bunny", storagePath: key, publicUrl: `${cdnUrl.replace(/\/$/, "")}/${key}` };
 }
 
-async function getStreamBunny(storedName, subfolder, settings) {
-  const storageZone = settings.storage_bunny_zone || "";
-  const apiKey = settings.storage_bunny_api_key || "";
-  const region = settings.storage_bunny_region || "";
-  const hostname = region ? `${region}.storage.bunnycdn.com` : "storage.bunnycdn.com";
-  const filePath2 = subfolder ? `${subfolder}/${storedName}` : storedName;
-
-  const response = await fetch(`https://${hostname}/${storageZone}/${filePath2}`, {
-    headers: { AccessKey: apiKey },
-  });
-
-  if (!response.ok) return null;
-
-  return {
-    stream: response.body,
-    size: parseInt(response.headers.get("content-length") || "0"),
-  };
+/** Total size from `Content-Range: bytes 0-99/1234`. */
+function totalFromContentRange(value) {
+  const m = /\/(\d+)\s*$/.exec(value || "");
+  return m ? Number(m[1]) : undefined;
 }
 
-async function deleteBunny(storedName, subfolder, settings) {
-  const storageZone = settings.storage_bunny_zone || "";
-  const apiKey = settings.storage_bunny_api_key || "";
-  const region = settings.storage_bunny_region || "";
-  const hostname = region ? `${region}.storage.bunnycdn.com` : "storage.bunnycdn.com";
-  const filePath2 = subfolder ? `${subfolder}/${storedName}` : storedName;
+/**
+ * Bunny's storage API returns a WHATWG ReadableStream; Express needs a Node
+ * Readable. Range requests are forwarded; if Bunny ignores the Range header
+ * (200 instead of 206) the whole object is returned as a normal response.
+ */
+export async function openBunny(key, settings, rangeHeader, fetchImpl = fetch) {
+  const headers = { AccessKey: settings.storage_bunny_api_key || "" };
+  const wantsRange = typeof rangeHeader === "string" && /^bytes=\d*-\d*$/.test(rangeHeader.trim());
+  if (wantsRange) headers.Range = rangeHeader.trim();
 
-  const response = await fetch(`https://${hostname}/${storageZone}/${filePath2}`, {
+  const response = await fetchImpl(bunnyEndpoint(key, settings), { headers });
+
+  if (response.status === 416) {
+    return { unsatisfiable: true, size: totalFromContentRange(response.headers.get("content-range")) ?? 0 };
+  }
+  if (!response.ok || !response.body) return null;
+
+  const stream = Readable.fromWeb(response.body);
+  if (response.status === 206) {
+    const contentRange = response.headers.get("content-range") || "";
+    const m = /bytes (\d+)-(\d+)\/(\d+)/.exec(contentRange);
+    if (m) return { stream, partial: true, start: Number(m[1]), end: Number(m[2]), size: Number(m[3]) };
+  }
+  return { stream, partial: false, size: Number(response.headers.get("content-length")) || undefined };
+}
+
+async function deleteBunny(key, settings) {
+  const response = await fetch(bunnyEndpoint(key, settings), {
     method: "DELETE",
-    headers: { AccessKey: apiKey },
+    headers: { AccessKey: settings.storage_bunny_api_key || "" },
   });
-
   return response.ok;
 }
+
+// Exposed for unit tests only.
+export const __test = { uploadBunny, objectKey, totalFromContentRange };

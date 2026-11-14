@@ -37,8 +37,16 @@
       await fetchAndActivate(remoteConfig);
       const url = getValue(remoteConfig, 'desktop_url').asString();
 
-      if (url) {
-        window.location.href = url;
+      // Only HTTPS dashboards are loaded; the Tauri shell additionally limits
+      // in-app navigation to trusted hosts (src-tauri/src/lib.rs).
+      let target = null;
+      try { target = new URL(url); } catch { /* invalid */ }
+      if (target && target.protocol === 'https:') {
+        window.location.href = target.href;
+      } else if (url) {
+        document.getElementById('err').style.display = 'block';
+        document.getElementById('err').textContent = 'Remote Config desktop_url must be an https:// URL.';
+        document.querySelector('.spinner').style.display = 'none';
       } else {
         document.getElementById('err').style.display = 'block';
         document.getElementById('err').textContent = 'No desktop_url configured in Remote Config.';

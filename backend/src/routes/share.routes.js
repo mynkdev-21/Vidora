@@ -8,12 +8,15 @@ import {
   viewSharedFile,
   getFileToken,
   getStreamUrl,
-  servePlaylist,
-  serveSegment,
-  serveMedia,
+  serveStreamVideo,
 } from "../controllers/share.controller.js";
 
 const router = Router();
+
+// ── Mounted at /api/stream BEFORE the API-key guard: <video> elements can't send
+// headers, and the unguessable stream token is the authorisation.
+export const streamRouter = Router();
+streamRouter.get("/:streamToken/video", serveStreamVideo);
 
 // ── PUBLIC — no JWT needed ────────────────────────────────────────────────────
 // GET /api/share/view/:token — file metadata (no video URL exposed)
@@ -31,9 +34,6 @@ router.get(
   validate,
   getStreamUrl
 );
-
-// GET /api/share/media/:fileId — legacy signed URL serve
-router.get("/media/:fileId", serveMedia);
 
 // ── PROTECTED — JWT required ──────────────────────────────────────────────────
 router.use(authenticate);

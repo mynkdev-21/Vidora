@@ -9,3 +9,4 @@ vidora-f17fa-firebase*.json
 *.zip
 .DS_Store
 .vscode/
+src-tauri/target/

@@ -14,7 +14,7 @@ import java.util.Map;
  * 
  * Setup in Firebase Console → Remote Config:
  *   - base_url: "http://10.95.58.78:5001/"  (change to production URL later)
- *   - api_key: "vdr_live_3c7e1a9f2b4d8056cf5e0a1b7d2c4f8e"
+ *   - api_key: "<MOBILE_CLIENT_KEY>"
  */
 public class RemoteConfigManager {
 

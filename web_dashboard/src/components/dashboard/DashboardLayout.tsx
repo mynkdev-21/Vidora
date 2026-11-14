@@ -60,22 +60,9 @@ export function DashboardLayout({ children, title, subtitle, activePage }: Dashb
 
   const initials = user?.name?.charAt(0).toUpperCase() ?? "C";
 
-  // Handle external links — open in system browser via backend redirect
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      const target = (e.target as HTMLElement).closest("a");
-      if (!target) return;
-      const href = target.getAttribute("href") || "";
-      if (href.startsWith("http") && !href.includes("192.168.") && !href.includes("localhost") && !href.includes("vidora.app")) {
-        e.preventDefault();
-        e.stopPropagation();
-        // Use backend to open URL (works in all contexts)
-        fetch(`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/open-url?url=${encodeURIComponent(href)}`).catch(() => {});
-      }
-    };
-    document.addEventListener("click", handler, true);
-    return () => document.removeEventListener("click", handler, true);
-  }, []);
+  // External links: browsers open them normally. In the desktop app, the Tauri
+  // shell intercepts navigation to untrusted origins and opens the system
+  // browser on the user's own machine (see src-tauri/src/lib.rs).
 
   return (
     <div className="flex h-screen overflow-hidden font-sans antialiased" style={{ background: BG, color: TEXT }}>

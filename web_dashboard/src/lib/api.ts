@@ -5,7 +5,16 @@
  */
 
 const BASE_URL  = import.meta.env.VITE_API_URL || "http://localhost:5001";
-// API key is NOT stored in frontend — backend allows requests from frontend origin without key
+
+/**
+ * Public client identifier for the web app. It ships in the bundle, so it is
+ * NOT a secret — the backend relies on JWTs for authorization. Configure it
+ * with VITE_API_KEY (the key labelled "web"/"frontend" in the API's API_KEYS).
+ */
+export const API_KEY: string = import.meta.env.VITE_API_KEY || "";
+if (!API_KEY && typeof window !== "undefined") {
+  console.warn("VITE_API_KEY is not set — API requests will be rejected.");
+}
 
 export { BASE_URL };
 
@@ -40,7 +49,7 @@ async function tryRefresh(): Promise<string | null> {
 
   const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
     method:  "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
     body:    JSON.stringify({ refreshToken }),
   });
 
@@ -60,6 +69,7 @@ export async function apiFetch<T = unknown>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-API-Key": API_KEY,
     ...(options.headers as Record<string, string>),
   };
 

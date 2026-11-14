@@ -29,6 +29,7 @@ import com.mynk.vidora.utils.Constants;
 import com.mynk.vidora.utils.FullScreenHelper;
 import com.mynk.vidora.utils.NavHelper;
 import com.mynk.vidora.utils.PrefsManager;
+import com.mynk.vidora.utils.ViewTracker;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -54,7 +55,7 @@ public class PlayerActivity extends AppCompatActivity {
     private Handler handler = new Handler(Looper.getMainLooper());
     private boolean isControlsVisible = true;
     private boolean isSeeking = false;
-    private boolean viewCounted = false;
+    private ViewTracker viewTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -305,10 +306,10 @@ public class PlayerActivity extends AppCompatActivity {
                     ivPlayPause.setImageResource(R.drawable.ic_pause);
                     startProgressUpdater();
 
-                    // Count view immediately when video starts
-                    if (!viewCounted) {
-                        viewCounted = true;
-                        countView(fileId);
+                    // Start the server-validated view (counted after the minimum watch time)
+                    if (viewTracker == null) {
+                        viewTracker = new ViewTracker(fileId, () -> player != null && player.isPlaying());
+                        viewTracker.start();
                     }
                 } else if (state == Player.STATE_ENDED) {
                     ivPlayPause.setImageResource(R.drawable.ic_play);
@@ -349,20 +350,6 @@ public class PlayerActivity extends AppCompatActivity {
                 handler.postDelayed(this, 500);
             }
         }, 500);
-    }
-
-    private void countView(String tokenOrId) {
-        android.util.Log.d("PlayerActivity", "countView called with: " + tokenOrId);
-        ApiClient.getService().countView(tokenOrId).enqueue(new retrofit2.Callback<Void>() {
-            @Override
-            public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {
-                android.util.Log.d("PlayerActivity", "countView response: " + response.code());
-            }
-            @Override
-            public void onFailure(retrofit2.Call<Void> call, Throwable t) {
-                android.util.Log.e("PlayerActivity", "countView failed: " + t.getMessage());
-            }
-        });
     }
 
     private void setupCreatorSection() {
@@ -549,6 +536,7 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (viewTracker != null) viewTracker.cancel();
         handler.removeCallbacksAndMessages(null);
         if (player != null) {
             player.release();

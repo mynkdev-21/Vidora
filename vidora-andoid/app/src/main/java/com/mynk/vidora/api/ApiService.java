@@ -53,9 +53,12 @@ public interface ApiService {
     @GET("api/share/stream/{token}")
     Call<StreamResponse> getStreamUrl(@Path("token") String token);
 
-    // ── View Count ────────────────────────────────────────────────────────────
+    // ── View Count (ticket flow — see utils/ViewTracker) ───────────────────────
+    @POST("api/view/{token}/ticket")
+    Call<Map<String, Object>> requestViewTicket(@Path("token") String token);
+
     @POST("api/view/{token}")
-    Call<Void> countView(@Path("token") String token);
+    Call<Map<String, Object>> redeemView(@Path("token") String token, @Body Map<String, String> body);
 
     // ── Contact / Support Message ─────────────────────────────────────────────
     @POST("api/contact")

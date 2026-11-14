@@ -16,12 +16,15 @@ import com.bumptech.glide.request.target.Target;
 import com.mynk.vidora.R;
 import com.mynk.vidora.utils.Constants;
 import com.mynk.vidora.utils.FullScreenHelper;
+import com.mynk.vidora.utils.ViewTracker;
 
 import android.graphics.drawable.Drawable;
 
 import androidx.annotation.Nullable;
 
 public class ImageViewerActivity extends AppCompatActivity {
+
+    private ViewTracker viewTracker;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,17 +84,17 @@ public class ImageViewerActivity extends AppCompatActivity {
                 })
                 .into(ivImage);
 
-            // Count view after 3 seconds (only for online)
-            ivImage.postDelayed(() -> {
-                if (!isFinishing() && token != null) {
-                    com.mynk.vidora.api.ApiClient.getService().countView(token).enqueue(
-                        new retrofit2.Callback<Void>() {
-                            @Override public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {}
-                            @Override public void onFailure(retrofit2.Call<Void> call, Throwable t) {}
-                        }
-                    );
-                }
-            }, 3000);
+            // Server-validated view: counted after the minimum display time (online only)
+            if (token != null) {
+                viewTracker = new ViewTracker(token, () -> !isFinishing() && hasWindowFocus());
+                viewTracker.start();
+            }
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (viewTracker != null) viewTracker.cancel();
     }
 }

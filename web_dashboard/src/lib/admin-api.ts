@@ -2,7 +2,7 @@
  * Admin API client — uses separate admin token (from admins table)
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+import { API_KEY, BASE_URL } from "./api";
 
 const ADMIN_TOKEN_KEY = "vdr_admin_token";
 const ADMIN_USER_KEY = "vdr_admin_user";
@@ -26,6 +26,7 @@ export async function adminFetch<T = unknown>(
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "X-API-Key": API_KEY,
     ...(options.headers as Record<string, string>),
   };
 

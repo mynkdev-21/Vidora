@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { User, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Camera } from "lucide-react";
-import { apiFetch, BASE_URL } from "@/lib/api";
+import { apiFetch, API_KEY, BASE_URL } from "@/lib/api";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -207,14 +207,11 @@ function AvatarUpload({ currentUrl, onUploaded }: { currentUrl: string; onUpload
 
     try {
       const token = localStorage.getItem("vdr_access_token") || "";
-      const apiKey = import.meta.env.VITE_API_KEY || "vdr_live_f9a2c84e1b3d7056ae4f8c2190d3b5e7";
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
-
-      const res = await fetch(`${baseUrl}/api/users/avatar`, {
+      const res = await fetch(`${BASE_URL}/api/users/avatar`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
-          "X-API-Key": apiKey,
+          "X-API-Key": API_KEY,
         },
         body: formData,
       });

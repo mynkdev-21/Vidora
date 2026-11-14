@@ -5,7 +5,7 @@ import {
   Film, Image, FileArchive, Music, File,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, API_KEY } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard/upload")({
   head: () => ({ meta: [{ title: "Upload — Vidora" }] }),
@@ -94,7 +94,7 @@ function UploadPage() {
     setError(""); setSuccess(false); setLoading(true); setProgress(0);
 
     const token  = localStorage.getItem("vdr_access_token") || "";
-    const apiKey = import.meta.env.VITE_API_KEY || "vdr_live_f9a2c84e1b3d7056ae4f8c2190d3b5e7";
+    const apiKey = API_KEY;
 
     const formData = new FormData();
     formData.append("file", selected.file);

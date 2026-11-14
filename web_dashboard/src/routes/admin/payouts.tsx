@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-api";
+import { API_KEY, BASE_URL } from "@/lib/api";
 import { Clock, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/payouts")({
@@ -165,11 +166,10 @@ function AdminPayouts() {
       if (receiptFile) {
         const formData = new FormData();
         formData.append("receipt", receiptFile);
-        const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
         const token = localStorage.getItem("vdr_admin_token");
         const res = await fetch(`${BASE_URL}/api/admin/payouts/${modalPayoutId}/receipt`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}`, "X-API-Key": API_KEY },
           body: formData,
         });
         const data = await res.json();
