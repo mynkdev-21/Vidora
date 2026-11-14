@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Download, Terminal, Shield, CheckCircle } from "lucide-react";
+import { DESKTOP_FILES, desktopDownloadUrl } from "@/lib/downloads";
 
 export const Route = createFileRoute("/mac-install")({
   head: () => ({ meta: [{ title: "Install Vidora on Mac — Instructions" }] }),
@@ -18,7 +19,7 @@ function MacInstallPage() {
   const searchParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const variant = searchParams.get("v") || "arm"; // arm or intel
 
-  const dmgFile = variant === "intel" ? "Vidora_1.0.0_x64.dmg" : "Vidora_1.0.0_aarch64.dmg";
+  const dmgFile = variant === "intel" ? DESKTOP_FILES.macIntel : DESKTOP_FILES.macArm;
   const chipLabel = variant === "intel" ? "Intel" : "Apple Silicon (M1/M2/M3/M4)";
 
   return (
@@ -45,7 +46,7 @@ function MacInstallPage() {
             <div className="flex-1">
               <h3 className="font-bold text-white">Download the App</h3>
               <p className="mt-1 text-sm" style={{ color: SUBTEXT }}>Click the button below to download the DMG file.</p>
-              <a href={`/apps/${dmgFile}`} download
+              <a href={desktopDownloadUrl(dmgFile)} download
                 className="mt-4 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
                 style={{ background: `linear-gradient(135deg,${PURPLE_D},${PURPLE})` }}>
                 <Download className="h-4 w-4" /> Download {dmgFile}

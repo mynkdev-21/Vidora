@@ -17,7 +17,7 @@ import shareRoutes, { streamRouter } from "./routes/share.routes.js";
 import adminRoutes    from "./routes/admin.routes.js";
 import ticketRoutes   from "./routes/ticket.routes.js";
 import notifRoutes    from "./routes/notification.routes.js";
-import subRoutes      from "./routes/subscription.routes.js";
+import { creatorRouter, subscribeRouter } from "./routes/subscription.routes.js";
 import mediaRoutes    from "./routes/media.routes.js";
 import { publicRouter, apiRouter } from "./routes/misc.routes.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
@@ -102,7 +102,8 @@ app.use("/api/share",    shareRoutes);
 app.use("/api/admin",    adminRoutes);
 app.use("/api/tickets",  ticketRoutes);
 app.use("/api/notifications", notifRoutes);
-app.use("/api",          subRoutes);
+app.use("/api/creators", creatorRouter);
+app.use("/api/subscribe", subscribeRouter);
 
 // ── 404 + Error handlers ──────────────────────────────────────────────────────
 app.use(notFound);

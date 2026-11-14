@@ -11,20 +11,19 @@ import {
   getCreatorFiles,
 } from "../controllers/subscription.controller.js";
 
-const router = Router();
+// ── /api/creators — public (API key only) ─────────────────────────────────────
+export const creatorRouter = Router();
+creatorRouter.get("/:id", getCreatorProfile);
+creatorRouter.get("/:id/files", getCreatorFiles);
 
-// ── Public (API key only) — creator profile & files ───────────────────────────
-router.get("/creators/:id", getCreatorProfile);
-router.get("/creators/:id/files", getCreatorFiles);
-
-// ── Protected (JWT required) ──────────────────────────────────────────────────
-router.use(authenticate);
-
-router.post("/subscribe/:creatorId", subscribe);
-router.delete("/subscribe/:creatorId", unsubscribe);
-router.patch("/subscribe/:creatorId/bell", toggleBell);
-router.get("/subscribe/status/:creatorId", getSubscriptionStatus);
-router.get("/subscribe/feed", getFeed);
-router.get("/subscribe/list", getSubscriptions);
-
-export default router;
+// ── /api/subscribe — JWT required ─────────────────────────────────────────────
+// Mounted at its own prefix: when this router was mounted at /api, its
+// router-wide authenticate() turned every unknown /api/* path into a 401.
+export const subscribeRouter = Router();
+subscribeRouter.use(authenticate);
+subscribeRouter.get("/feed", getFeed);
+subscribeRouter.get("/list", getSubscriptions);
+subscribeRouter.get("/status/:creatorId", getSubscriptionStatus);
+subscribeRouter.post("/:creatorId", subscribe);
+subscribeRouter.delete("/:creatorId", unsubscribe);
+subscribeRouter.patch("/:creatorId/bell", toggleBell);

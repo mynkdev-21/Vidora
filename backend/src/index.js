@@ -15,10 +15,19 @@ if (errors.length) {
 }
 
 const { default: app } = await import("./app.js");
-await import("./db/connection.js"); // fails fast if MySQL is unreachable
+const { verifyConnection } = await import("./db/connection.js");
+try {
+  await verifyConnection();
+} catch (err) {
+  console.error("❌ MySQL connection failed:", err.message);
+  process.exit(1);
+}
 
 const { initFirebase } = await import("./utils/firebase.js");
 initFirebase();
+
+const { startCleanupJob } = await import("./jobs/cleanup.js");
+startCleanupJob();
 
 if (config.telegramBotToken) {
   import("./bot/index.js").catch((err) => console.error("⚠️  Bot failed to start:", err.message));

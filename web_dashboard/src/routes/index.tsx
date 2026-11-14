@@ -105,6 +105,7 @@ function GlassCard({ children, className = "", style = {} }: {
 // ── root ──────────────────────────────────────────────────────────────────────
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingFooter } from "@/components/landing/LandingFooter";
+import { DESKTOP_FILES, desktopDownloadUrl } from "@/lib/downloads";
 
 function Index() {
   return (
@@ -761,7 +762,7 @@ function Desktop() {
         </div>
         <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
           <a
-            href="/apps/Vidora_1.0.0_x64-setup.exe"
+            href={desktopDownloadUrl(DESKTOP_FILES.windows)}
             download
             className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold text-white transition hover:opacity-90"
             style={{ background: `linear-gradient(135deg,${PURPLE_D},${PURPLE})`, boxShadow: "0 0 28px rgba(167,139,250,0.35)" }}

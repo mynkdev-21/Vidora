@@ -15,15 +15,15 @@ const pool = mysql.createPool({
   charset:            "utf8mb4",
 });
 
-// Test connection on startup
-pool.getConnection()
-  .then((conn) => {
-    console.log("✅ MySQL connected — database:", process.env.DB_NAME);
-    conn.release();
-  })
-  .catch((err) => {
-    console.error("❌ MySQL connection failed:", err.message);
-    process.exit(1);
-  });
+/**
+ * Fails fast when MySQL is unreachable. Called by the server entry point
+ * (index.js) — not at import time, so importing the pool (tests, scripts)
+ * never has process-exiting side effects.
+ */
+export async function verifyConnection() {
+  const conn = await pool.getConnection();
+  console.log("✅ MySQL connected — database:", process.env.DB_NAME);
+  conn.release();
+}
 
 export default pool;

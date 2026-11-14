@@ -4,6 +4,8 @@ import fs from "fs";
 import { authenticateAdmin } from "../middleware/adminAuth.js";
 import { validate } from "../middleware/validate.js";
 import { loginLimiters } from "../middleware/loginLimiter.js";
+import { logAdminAction } from "../services/audit.js";
+import pool from "../db/connection.js";
 import { uploadDir } from "../utils/paths.js";
 import { imageUploader, verifyImageContent } from "../utils/imageUpload.js";
 import { maskSettingMap, changedSettingEntries } from "../utils/settings.js";
@@ -127,11 +129,13 @@ router.post("/impersonate/:userId", async (req, res) => {
 
     const user = rows[0];
     const jwt = (await import("jsonwebtoken")).default;
+    // `imp` records which admin minted the token, so actions taken with it are attributable.
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, imp: req.admin.id },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h", algorithm: "HS256" }
     );
+    await logAdminAction(req, "user.impersonate", { targetType: "user", targetId: user.id, details: { email: user.email, expires_in: "1h" } });
 
     res.json({
       success: true,
@@ -143,6 +147,22 @@ router.post("/impersonate/:userId", async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to impersonate." });
   }
+});
+
+// Audit log (most recent first)
+router.get("/audit-log", async (req, res, next) => {
+  try {
+    const limit = Math.min(200, Math.max(1, parseInt(req.query.limit) || 50));
+    const offset = Math.max(0, parseInt(req.query.offset) || 0);
+    const [rows] = await pool.query(
+      `SELECT l.id, l.action, l.target_type, l.target_id, l.details, l.ip, l.created_at,
+              a.email AS admin_email
+       FROM admin_audit_log l LEFT JOIN admins a ON a.id = l.admin_id
+       ORDER BY l.id DESC LIMIT ? OFFSET ?`,
+      [limit, offset]
+    );
+    res.json({ success: true, data: { entries: rows } });
+  } catch (err) { next(err); }
 });
 
 // System info (from env)
@@ -225,6 +245,9 @@ router.put("/storage", async (req, res) => {
     const { clearStorageCache } = await import("../utils/storage.js");
     clearStorageCache();
 
+    await logAdminAction(req, "storage.update", {
+      details: { keys: changedSettingEntries(settings).map(([k]) => k).filter((k) => k.startsWith("storage_")) },
+    });
     res.json({ success: true, message: "Storage settings saved." });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to save storage settings." });

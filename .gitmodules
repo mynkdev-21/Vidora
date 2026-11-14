@@ -1,0 +1,3 @@
+[submodule "vidora-desktop"]
+	path = vidora-desktop
+	url = https://github.com/mynkdev-21/vidora-desktop.git

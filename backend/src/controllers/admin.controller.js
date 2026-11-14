@@ -1,5 +1,6 @@
 import { maskSettingRows, changedSettingEntries, getNumericSetting } from "../utils/settings.js";
 import { computeBalance, currentEarningRate, updatePayoutStatus, PayoutError } from "../services/earnings.service.js";
+import { logAdminAction } from "../services/audit.js";
 import pool from "../db/connection.js";
 
 // ── GET /api/admin/stats ─────────────────────────────────────────────────────
@@ -124,6 +125,7 @@ export async function updateUser(req, res, next) {
     values.push(id);
     await pool.query(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`, values);
 
+    await logAdminAction(req, "user.update", { targetType: "user", targetId: id, details: { role, is_active } });
     res.json({ success: true, message: "User updated." });
   } catch (err) { next(err); }
 }
@@ -138,6 +140,7 @@ export async function deleteUser(req, res, next) {
     }
 
     await pool.query("UPDATE users SET is_active = 0 WHERE id = ?", [id]);
+    await logAdminAction(req, "user.deactivate", { targetType: "user", targetId: id });
     res.json({ success: true, message: "User deactivated." });
   } catch (err) { next(err); }
 }
@@ -276,6 +279,7 @@ export async function purgeDeletedFiles(req, res, next) {
       }
     }
 
+    await logAdminAction(req, "files.purge", { details: { purged: deletedCount, shared_objects_kept: keptShared } });
     res.json({
       success: true,
       message: `Purged ${deletedCount} files permanently. Earnings preserved.`,
@@ -343,6 +347,12 @@ export async function updatePayout(req, res, next) {
       if (err instanceof PayoutError) return res.status(err.status).json({ success: false, message: err.message });
       throw err;
     }
+
+    await logAdminAction(req, "payout.update", {
+      targetType: "payout",
+      targetId: id,
+      details: { from: result.previousStatus, to: status, referral_credited: result.referralCredited, transaction_id: transaction_id ?? null },
+    });
 
     // Notify only on a real transition — re-saving a payout must not re-send anything.
     if (result.transitioned && (status === "completed" || status === "failed")) {
@@ -507,6 +517,7 @@ export async function updateSettings(req, res, next) {
       );
     }
 
+    await logAdminAction(req, "settings.update", { details: { keys: changedSettingEntries(settings).map(([k]) => k) } });
     res.json({ success: true, message: "Settings updated." });
   } catch (err) { next(err); }
 }
@@ -780,6 +791,7 @@ export async function toggleUserPremium(req, res, next) {
     const { userId } = req.params;
     const { is_premium } = req.body;
     await pool.query("UPDATE users SET is_premium = ? WHERE id = ?", [is_premium ? 1 : 0, userId]);
+    await logAdminAction(req, "user.premium", { targetType: "user", targetId: userId, details: { is_premium: !!is_premium } });
     res.json({ success: true, message: is_premium ? "Premium granted." : "Premium removed." });
   } catch (err) { next(err); }
 }

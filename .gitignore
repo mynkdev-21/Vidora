@@ -10,3 +10,6 @@ vidora-f17fa-firebase*.json
 .DS_Store
 .vscode/
 src-tauri/target/
+
+# Desktop installers are published as GitHub Release assets (see .github/workflows/build.yml)
+web_dashboard/public/apps/
