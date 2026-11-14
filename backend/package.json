@@ -10,7 +10,8 @@
     "bot": "node src/bot/index.js",
     "db:migrate": "node src/db/migrate.js",
     "test": "node --import ./test/setup/env.js --test-global-setup=./test/setup/global.js --test --test-concurrency=1 \"test/**/*.test.js\"",
-    "db:migrate:status": "node src/db/migrate.js --status"
+    "db:migrate:status": "node src/db/migrate.js --status",
+    "test:coverage": "node --import ./test/setup/env.js --test-global-setup=./test/setup/global.js --test --test-concurrency=1 --experimental-test-coverage --test-coverage-include=\"src/**\" \"test/**/*.test.js\""
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1057.0",

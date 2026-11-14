@@ -24,15 +24,33 @@ const SALT_ROUNDS = 12;
 // Compared against when the email doesn't exist, so response time doesn't reveal it.
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync("vidora-timing-equaliser", SALT_ROUNDS);
 
+/**
+ * Refresh tokens are stored as SHA-256 hex digests and looked up by that
+ * digest. They used to be bcrypt-hashed, but bcrypt only reads the first 72
+ * bytes — and every JWT for a user shares those bytes (header + "id"), so any
+ * of a user's refresh tokens matched any stored hash and rotation/single-use
+ * never worked. Tokens are high-entropy, so a fast hash is appropriate.
+ */
+export function hashRefreshToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+// Every token gets a random jti: without it, two tokens issued to the same
+// user in the same second were byte-identical, so rotating one refresh token
+// left its twin (e.g. from register + immediate login) still valid.
 function signAccessToken(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+  return jwt.sign(payload, config.jwt.secret, {
+    expiresIn: config.jwt.expiresIn,
+    algorithm: "HS256",
+    jwtid: uuidv4(),
   });
 }
 
 function signRefreshToken(payload) {
-  return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, {
-    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
+  return jwt.sign(payload, config.jwt.refreshSecret, {
+    expiresIn: config.jwt.refreshExpiresIn,
+    algorithm: "HS256",
+    jwtid: uuidv4(),
   });
 }
 
@@ -70,7 +88,7 @@ export async function register(req, res, next) {
     const refreshToken = signRefreshToken(tokenPayload);
 
     // Store hashed refresh token
-    const refreshHash = await bcrypt.hash(refreshToken, 8);
+    const refreshHash = hashRefreshToken(refreshToken);
     const expiresAt   = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await pool.query(
       "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
@@ -137,7 +155,7 @@ export async function login(req, res, next) {
     const refreshToken = signRefreshToken(tokenPayload);
 
     // Store hashed refresh token
-    const refreshHash = await bcrypt.hash(refreshToken, 8);
+    const refreshHash = hashRefreshToken(refreshToken);
     const expiresAt   = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await pool.query(
       "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
@@ -168,31 +186,27 @@ export async function refresh(req, res, next) {
 
     let decoded;
     try {
-      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      decoded = jwt.verify(refreshToken, config.jwt.refreshSecret, { algorithms: ["HS256"] });
     } catch {
       return res.status(401).json({ success: false, message: "Invalid or expired refresh token." });
     }
 
-    // Find matching stored token
+    // Exact match on the token's digest (indexed, constant work per request).
     const [tokens] = await pool.query(
-      "SELECT id, token_hash FROM refresh_tokens WHERE user_id = ? AND expires_at > NOW()",
-      [decoded.id]
+      "SELECT id FROM refresh_tokens WHERE token_hash = ? AND user_id = ? AND expires_at > NOW()",
+      [hashRefreshToken(refreshToken), decoded.id]
     );
-
-    let matched = null;
-    for (const t of tokens) {
-      if (await bcrypt.compare(refreshToken, t.token_hash)) {
-        matched = t;
-        break;
-      }
-    }
+    const matched = tokens[0];
 
     if (!matched) {
       return res.status(401).json({ success: false, message: "Refresh token not recognised." });
     }
 
     // Rotate — delete old, issue new
-    await pool.query("DELETE FROM refresh_tokens WHERE id = ?", [matched.id]);
+    const [del] = await pool.query("DELETE FROM refresh_tokens WHERE id = ?", [matched.id]);
+    if (del.affectedRows !== 1) {
+      return res.status(401).json({ success: false, message: "Refresh token not recognised." });
+    }
 
     const [userRows] = await pool.query(
       "SELECT id, email, role FROM users WHERE id = ? AND is_active = 1",
@@ -206,7 +220,7 @@ export async function refresh(req, res, next) {
     const newAccessToken  = signAccessToken(tokenPayload);
     const newRefreshToken = signRefreshToken(tokenPayload);
 
-    const newHash   = await bcrypt.hash(newRefreshToken, 8);
+    const newHash   = hashRefreshToken(newRefreshToken);
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     await pool.query(
       "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
@@ -230,7 +244,7 @@ export async function logout(req, res, next) {
     if (refreshToken) {
       // Verify before trusting — never use jwt.decode() for security decisions
       try {
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret, { algorithms: ["HS256"] });
         if (decoded?.id) {
           await pool.query("DELETE FROM refresh_tokens WHERE user_id = ?", [decoded.id]);
         }
