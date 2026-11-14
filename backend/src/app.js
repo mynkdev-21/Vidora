@@ -50,9 +50,17 @@ app.use(cors({
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: false, limit: "1mb" }));
 
-// ── Request logging (URLs only; never headers or bodies) ─────────────────────
+// ── Request logging (never headers, bodies, query strings or path tokens) ────
+// Query strings can carry verification tokens and stream URLs embed a
+// capability token, so both are redacted before anything reaches the log.
+export function redactUrl(url = "") {
+  return url.split("?")[0].replace(/\/api\/stream\/[^/]+/, "/api/stream/[redacted]");
+}
+morgan.token("safe-url", (req) => redactUrl(req.originalUrl || req.url));
 if (!config.isTest) {
-  app.use(morgan(config.isProduction ? "combined" : "dev"));
+  app.use(morgan(config.isProduction
+    ? ':remote-addr - [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":user-agent"'
+    : ":method :safe-url :status :response-time ms"));
 }
 
 // ── Global rate limit ─────────────────────────────────────────────────────────

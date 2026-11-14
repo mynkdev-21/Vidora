@@ -41,3 +41,15 @@ test("validation messages never contain secret values", () => {
   assert.ok(errors.length > 0);
   assert.ok(errors.every((e) => !e.includes(secret)));
 });
+
+test("access-log URLs drop query strings and stream tokens", async () => {
+  const { redactUrl } = await import("../../src/app.js");
+  const pool = (await import("../../src/db/connection.js")).default;
+  try {
+    assert.equal(redactUrl("/api/auth/verify-email?token=abc123"), "/api/auth/verify-email");
+    assert.equal(redactUrl(`/api/stream/${"f".repeat(48)}/video`), "/api/stream/[redacted]/video");
+    assert.equal(redactUrl("/api/files?page=2"), "/api/files");
+  } finally {
+    await pool.end();
+  }
+});
