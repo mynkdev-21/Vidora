@@ -24,6 +24,7 @@ import com.mynk.vidora.utils.Constants;
 import com.mynk.vidora.utils.FullScreenHelper;
 import com.mynk.vidora.utils.HistoryManager;
 import com.mynk.vidora.utils.NavHelper;
+import com.mynk.vidora.utils.ShareLinks;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -220,22 +221,7 @@ public class FileDetailActivity extends AppCompatActivity {
 
     private String getTokenFromIntent() {
         Uri data = getIntent().getData();
-        if (data != null) {
-            String path = data.getPath();
-            if (path != null && path.startsWith("/")) {
-                return path.substring(1);
-            }
-            if ("view".equals(data.getHost()) || "download".equals(data.getHost())) {
-                String lastSeg = data.getLastPathSegment();
-                if (lastSeg != null) return lastSeg;
-                path = data.getSchemeSpecificPart();
-                if (path != null && path.contains("/")) {
-                    String[] parts = path.split("/");
-                    if (parts.length > 0) return parts[parts.length - 1];
-                }
-            }
-        }
-        return getIntent().getStringExtra("token");
+        return ShareLinks.token(data != null ? data.toString() : getIntent().getStringExtra("token"), Constants.WEB_BASE_URL);
     }
 
     private void loadFileDetails() {

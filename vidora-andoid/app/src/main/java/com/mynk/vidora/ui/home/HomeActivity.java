@@ -222,19 +222,6 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private String extractToken(String link) {
-        if (link.contains("vidora://view/")) {
-            return link.substring(link.indexOf("vidora://view/") + 14);
-        }
-        if (link.contains("/v/")) {
-            int idx = link.indexOf("/v/") + 3;
-            String token = link.substring(idx);
-            if (token.contains("?")) token = token.substring(0, token.indexOf("?"));
-            if (token.contains("/")) token = token.substring(0, token.indexOf("/"));
-            return token.isEmpty() ? null : token;
-        }
-        if (link.matches("[A-Za-z0-9_\\-]{10,30}")) {
-            return link;
-        }
-        return null;
+        return com.mynk.vidora.utils.ShareLinks.token(link, com.mynk.vidora.utils.Constants.WEB_BASE_URL);
     }
 }
