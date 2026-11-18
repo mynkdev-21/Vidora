@@ -1,5 +1,7 @@
 # Android app flow audit (source-level, 2026-11-19)
 
+> Historical snapshot before the UI redesign. The app now has 27 Activities, including native CreatorHub, MyVideos, and Earnings. See [ANDROID_UI_REDESIGN.md](ANDROID_UI_REDESIGN.md) for current coverage and remaining validation.
+
 This inventory describes code paths, not device-verified behavior. No emulator, ADB, production account, or production data was used.
 
 ## Architecture and navigation
