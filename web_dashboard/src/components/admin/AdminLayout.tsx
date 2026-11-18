@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Users, FolderOpen, Wallet, BarChart3,
   Settings, LogOut, Shield, Bell, MessageCircle, Ticket, Megaphone, Crown, HardDrive,
 } from "lucide-react";
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, adminTokenStore, adminLogout, restoreAdminSession } from "@/lib/admin-api";
 import logoIcon from "@/assets/logo-icon.png";
 
 const BG      = "#06070d";
@@ -17,18 +17,6 @@ const MUTED   = "#64748b";
 const SUBTEXT = "#94a3b8";
 const TEXT    = "#e2e8f0";
 const RED     = "#f87171";
-
-const ADMIN_TOKEN_KEY = "vdr_admin_token";
-const ADMIN_USER_KEY = "vdr_admin_user";
-
-const adminTokenStore = {
-  getToken: () => localStorage.getItem(ADMIN_TOKEN_KEY),
-  getAdmin: () => { try { const s = localStorage.getItem(ADMIN_USER_KEY); return s ? JSON.parse(s) : null; } catch { return null; } },
-  clear() {
-    localStorage.removeItem(ADMIN_TOKEN_KEY);
-    localStorage.removeItem(ADMIN_USER_KEY);
-  },
-};
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: "Overview",       to: "/admin"               },
@@ -53,11 +41,24 @@ interface AdminLayoutProps {
 export function AdminLayout({ children, title, subtitle, activePage }: AdminLayoutProps) {
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sessionReady, setSessionReady] = useState(false);
+  const [, rerender] = useState(0);
+  useEffect(() => {
+    adminTokenStore.clearLegacyStorage();
+    const sync = () => rerender((n) => n + 1);
+    window.addEventListener("vidora:admin-session", sync);
+    restoreAdminSession().finally(() => setSessionReady(true));
+    return () => window.removeEventListener("vidora:admin-session", sync);
+  }, []);
 
   const token = typeof window !== "undefined" ? adminTokenStore.getToken() : null;
   const admin = typeof window !== "undefined" ? adminTokenStore.getAdmin() : null;
 
-  // Admin guard — show 404 if no token
+  if (!sessionReady && !token) {
+    return <div className="min-h-screen" style={{ background: BG }} />;
+  }
+
+  // Admin guard
   if (!token) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-4" style={{ background: BG, color: TEXT }}>
@@ -77,8 +78,8 @@ export function AdminLayout({ children, title, subtitle, activePage }: AdminLayo
     );
   }
 
-  const handleLogout = () => {
-    adminTokenStore.clear();
+  const handleLogout = async () => {
+    await adminLogout();
     window.location.href = "/main/admin";
   };
 

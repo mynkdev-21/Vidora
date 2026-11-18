@@ -5,7 +5,7 @@ import {
   Users, LifeBuoy, Settings, Bell, Search, LogOut, Key, Send,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { tokenStore, apiFetch } from "@/lib/api";
+import { apiFetch } from "@/lib/api";
 import logoIcon from "@/assets/logo-icon.png";
 
 const BG      = "#06070d";
@@ -37,16 +37,13 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, title, subtitle, activePage }: DashboardLayoutProps) {
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isRestoring, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [profileDropdown, setProfileDropdown] = useState(false);
 
-  // Client-side auth guard — check localStorage directly (no useEffect needed)
-  // tokenStore.getUser() reads localStorage synchronously
-  const hasToken = typeof window !== "undefined" ? !!tokenStore.getAccess() : true; // SSR assumes logged in
-
-  if (!isAuthenticated && !hasToken) {
+  if (isRestoring) return <div className="min-h-screen" style={{ background: BG }} />;
+  if (!isAuthenticated) {
     if (typeof window !== "undefined") {
       window.location.href = "/login";
     }

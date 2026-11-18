@@ -70,7 +70,7 @@ function PrivacyPage() {
           </Section>
 
           <Section title="7. Cookies & Tracking">
-            <p>We use localStorage to store authentication tokens (JWT). We do not use third-party tracking cookies. Analytics data is collected server-side and is not shared with advertisers.</p>
+            <p>We use secure, HttpOnly cookies for browser session renewal and keep short-lived access tokens in memory. We do not use third-party tracking cookies. Analytics data is collected server-side and is not shared with advertisers.</p>
           </Section>
 
           <Section title="8. Children's Privacy">

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Sparkles, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { tokenStore } from "@/lib/api";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "Log In — Vidora" }] }),
@@ -27,20 +28,12 @@ function LoginPage() {
   const [isBanned, setIsBanned]         = useState(false);
   const [loading, setLoading]           = useState(false);
 
-  // Handle admin impersonation
+  const [sessionNotice, setSessionNotice] = useState(false);
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("impersonate") === "1") {
-      const token = localStorage.getItem("__impersonate_token");
-      const userStr = localStorage.getItem("__impersonate_user");
-      if (token && userStr) {
-        localStorage.setItem("vdr_access_token", token);
-        localStorage.setItem("vdr_user", userStr);
-        localStorage.removeItem("__impersonate_token");
-        localStorage.removeItem("__impersonate_user");
-        window.location.href = "/dashboard";
-        return;
-      }
+    tokenStore.clearLegacyStorage();
+    if (sessionStorage.getItem("vdr_session_updated")) {
+      setSessionNotice(true);
+      sessionStorage.removeItem("vdr_session_updated");
     }
   }, []);
 
@@ -108,6 +101,11 @@ function LoginPage() {
           <p className="mt-1 text-sm" style={{ color: SUBTEXT }}>
             Log in to your Vidora account
           </p>
+          {sessionNotice && (
+            <p className="mt-3 text-sm" role="status" style={{ color: "#fbbf24" }}>
+              Session security was updated. Please sign in again.
+            </p>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-4">
             {/* Email */}

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { adminFetch, adminTokenStore } from "@/lib/admin-api";
+import { adminFetch, adminTokenStore, restoreAdminSession } from "@/lib/admin-api";
 import { Shield, Eye, EyeOff, Loader2 } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 
@@ -24,12 +24,16 @@ function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [sessionNotice, setSessionNotice] = useState(false);
 
   // If already logged in, redirect via useEffect
   useEffect(() => {
-    if (adminTokenStore.getToken()) {
-      navigate({ to: "/admin" });
+    adminTokenStore.clearLegacyStorage();
+    if (sessionStorage.getItem("vdr_admin_session_updated")) {
+      setSessionNotice(true);
+      sessionStorage.removeItem("vdr_admin_session_updated");
     }
+    restoreAdminSession().then((ok) => { if (ok) navigate({ to: "/admin" }); }).catch(() => {});
   }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,13 +45,13 @@ function AdminLogin() {
       const res = await adminFetch<{
         success: boolean;
         message: string;
-        data: { admin: { id: string; name: string; email: string }; token: string };
+        data: { admin: { id: string; name: string; email: string }; token: string; csrfToken: string };
       }>("/api/admin/auth/login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
 
-      adminTokenStore.set(res.data.token, res.data.admin);
+      adminTokenStore.set(res.data.token, res.data.admin, res.data.csrfToken);
       navigate({ to: "/admin" });
     } catch (err: any) {
       setError(err.message || "Login failed.");
@@ -69,6 +73,9 @@ function AdminLogin() {
             </span>
           </div>
           <p className="text-sm" style={{ color: MUTED }}>Sign in to admin panel</p>
+          {sessionNotice && <p className="mt-2 text-sm" role="status" style={{ color: "#fbbf24" }}>
+            Session security was updated. Please sign in again.
+          </p>}
         </div>
 
         {/* Login Card */}

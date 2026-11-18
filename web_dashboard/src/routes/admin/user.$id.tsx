@@ -114,28 +114,18 @@ function AdminUserDetail() {
                     {user.is_active ? "Ban User" : "Unban User"}
                   </button>
                   <button onClick={async () => {
+                    const tab = window.open("about:blank", "_blank");
                     try {
-                      const res = await adminFetch<{ success: boolean; data: { accessToken: string; user: any } }>(`/api/admin/impersonate/${user.id}`, { method: "POST" });
+                      const res = await adminFetch<{ success: boolean; data: { user: any } }>(`/api/admin/impersonate/${user.id}`, { method: "POST" });
                       if (res.success) {
-                        const { accessToken, user: u } = res.data;
-                        // Open dashboard in new tab with token
-                        const baseUrl = window.location.origin;
-                        const w = window.open(baseUrl + "/dashboard", "_blank");
-                        if (w) {
-                          w.addEventListener("load", () => {
-                            w.localStorage.setItem("vdr_access_token", accessToken);
-                            w.localStorage.setItem("vdr_user", JSON.stringify(u));
-                            w.location.reload();
-                          });
+                        if (tab) {
+                          tab.opener = null;
+                          tab.location.href = "/dashboard";
                         }
-                        // Fallback: set in current origin localStorage then open
-                        localStorage.setItem("__impersonate_token", accessToken);
-                        localStorage.setItem("__impersonate_user", JSON.stringify(u));
-                        setTimeout(() => {
-                          const tab = window.open(baseUrl + "/login?impersonate=1", "_blank");
-                        }, 100);
+                      } else {
+                        tab?.close();
                       }
-                    } catch {}
+                    } catch { tab?.close(); }
                   }} className="px-2.5 py-1 rounded-lg text-[10px] font-semibold transition hover:opacity-80" style={{
                     background: "rgba(96,165,250,0.1)", color: "#60a5fa", border: "1px solid rgba(96,165,250,0.3)",
                   }}>

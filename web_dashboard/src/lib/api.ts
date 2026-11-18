@@ -1,169 +1,152 @@
-/**
- * Centralized API client for Videora backend
- * Automatically attaches API key + JWT access token to every request.
- * Handles token refresh transparently on 401.
- */
-
-const BASE_URL  = import.meta.env.VITE_API_URL || "http://localhost:5001";
-
-/**
- * Public client identifier for the web app. It ships in the bundle, so it is
- * NOT a secret — the backend relies on JWTs for authorization. Configure it
- * with VITE_API_KEY (the key labelled "web"/"frontend" in the API's API_KEYS).
- */
+/** Browser authentication: in-memory access token, HttpOnly refresh cookie. */
+const configuredUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
+export const BASE_URL = typeof window !== "undefined" && import.meta.env.DEV
+  ? `${window.location.protocol}//${window.location.hostname}:5001`
+  : configuredUrl;
 export const API_KEY: string = import.meta.env.VITE_API_KEY || "";
-if (!API_KEY && typeof window !== "undefined") {
-  console.warn("VITE_API_KEY is not set — API requests will be rejected.");
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  is_verified?: number;
+  avatar_url?: string;
+}
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  data: { user: AuthUser; accessToken: string; csrfToken: string };
 }
 
-export { BASE_URL };
+let accessToken: string | null = null;
+let csrfToken: string | null = null;
+let currentUser: AuthUser | null = null;
+let refreshPromise: Promise<boolean> | null = null;
 
-const ACCESS_TOKEN_KEY  = "vdr_access_token";
-const REFRESH_TOKEN_KEY = "vdr_refresh_token";
-const USER_KEY          = "vdr_user";
-
-// ── Token helpers ─────────────────────────────────────────────────────────────
 export const tokenStore = {
-  getAccess:      () => localStorage.getItem(ACCESS_TOKEN_KEY),
-  getRefresh:     () => localStorage.getItem(REFRESH_TOKEN_KEY),
-  getUser:        () => { try { const s = localStorage.getItem(USER_KEY); return s ? JSON.parse(s) : null; } catch { return null; } },
-  set(accessToken: string, refreshToken: string, user: object) {
-    localStorage.setItem(ACCESS_TOKEN_KEY,  accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-    localStorage.setItem(USER_KEY,          JSON.stringify(user));
+  getAccess: () => accessToken,
+  getUser: () => currentUser,
+  set(access: string, csrf: string, user: AuthUser) {
+    accessToken = access;
+    csrfToken = csrf;
+    currentUser = user;
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("vidora:user-session"));
+  },
+  updateUser(user: AuthUser) {
+    currentUser = user;
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("vidora:user-session"));
   },
   clear() {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    accessToken = null;
+    csrfToken = null;
+    currentUser = null;
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("vidora:user-session"));
+  },
+  clearLegacyStorage() {
+    if (typeof window === "undefined") return false;
+    const keys = ["vdr_access_token", "vdr_refresh_token", "vdr_user", "__impersonate_token", "__impersonate_user"];
+    const hadSession = keys.some((key) => localStorage.getItem(key) !== null);
+    keys.forEach((key) => localStorage.removeItem(key));
+    if (hadSession) sessionStorage.setItem("vdr_session_updated", "1");
+    return hadSession;
   },
 };
+const userChannel = typeof window !== "undefined" && "BroadcastChannel" in window
+  ? new BroadcastChannel("vidora-user-session") : null;
+if (userChannel) userChannel.onmessage = (event) => {
+  if (event.data === "logout") tokenStore.clear();
+};
 
-// ── Core fetch wrapper ────────────────────────────────────────────────────────
-let isRefreshing = false;
-let refreshQueue: Array<(token: string) => void> = [];
+const browserHeaders = (extra: Record<string, string> = {}) => ({
+  "Content-Type": "application/json",
+  "X-API-Key": API_KEY,
+  "X-Session-Mode": "browser",
+  ...extra,
+});
 
-async function tryRefresh(): Promise<string | null> {
-  const refreshToken = tokenStore.getRefresh();
-  if (!refreshToken) return null;
-
-  const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
-    method:  "POST",
-    headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
-    body:    JSON.stringify({ refreshToken }),
+async function fetchCsrf(): Promise<string | null> {
+  const res = await fetch(`${BASE_URL}/api/auth/browser-csrf`, {
+    credentials: "include", headers: browserHeaders(),
   });
-
-  if (!res.ok) { tokenStore.clear(); return null; }
-
+  if (!res.ok) return null;
   const data = await res.json();
-  const { accessToken, refreshToken: newRefresh } = data.data;
-  const user = tokenStore.getUser();
-  tokenStore.set(accessToken, newRefresh, user);
-  return accessToken;
+  return data.data.csrfToken as string;
 }
 
-export async function apiFetch<T = unknown>(
-  path: string,
-  options: RequestInit = {},
-  retry = true,
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-API-Key": API_KEY,
-    ...(options.headers as Record<string, string>),
-  };
-
-  const accessToken = tokenStore.getAccess();
-  if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
-
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
-
-  // Token expired — try refresh once
-  if (res.status === 401 && retry) {
-    const data = await res.json().catch(() => ({}));
-
-    // Account banned — force logout
-    if (data?.code === "ACCOUNT_BANNED") {
-      tokenStore.clear();
-      window.location.href = "/login";
-      throw new Error(data.message || "Your account has been banned.");
+async function performRefresh(): Promise<boolean> {
+  let csrf = await fetchCsrf();
+  if (!csrf) return false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      method: "POST", credentials: "include",
+      headers: browserHeaders({ "X-CSRF-Token": csrf }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      tokenStore.set(data.data.accessToken, data.data.csrfToken, data.data.user);
+      return true;
     }
-
-    if (data?.code !== "TOKEN_EXPIRED") {
-      // Regular auth error (wrong password, invalid token, etc.)
-      throw new Error(data?.message || "Invalid email or password.");
-    }
-
-    if (data?.code === "TOKEN_EXPIRED") {
-      if (isRefreshing) {
-        // Queue this request until refresh completes
-        return new Promise((resolve, reject) => {
-          refreshQueue.push(async (newToken) => {
-            try {
-              resolve(await apiFetch<T>(path, options, false));
-            } catch (e) { reject(e); }
-          });
-        });
-      }
-
-      isRefreshing = true;
-      const newToken = await tryRefresh();
-      isRefreshing = false;
-
-      if (newToken) {
-        refreshQueue.forEach((cb) => cb(newToken));
-        refreshQueue = [];
-        return apiFetch<T>(path, options, false);
-      }
-
-      // Refresh failed — clear session
-      tokenStore.clear();
-      window.location.href = "/login";
-      throw new Error("Session expired. Please log in again.");
+    // Another tab may have rotated the shared cookie. Read its current CSRF
+    // proof once; never accept or reuse the already-rotated refresh token.
+    if (attempt === 0) {
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      csrf = await fetchCsrf();
+      if (!csrf) return false;
     }
   }
+  return false;
+}
 
+export async function restoreBrowserSession(): Promise<boolean> {
+  if (refreshPromise) return refreshPromise;
+  const run = async () => {
+    if (typeof navigator !== "undefined" && navigator.locks?.request) {
+      return navigator.locks.request("vidora-user-refresh", performRefresh);
+    }
+    return performRefresh();
+  };
+  refreshPromise = run().finally(() => { refreshPromise = null; });
+  return refreshPromise;
+}
+
+export async function apiFetch<T = unknown>(path: string, options: RequestInit = {}, retry = true): Promise<T> {
+  const headers: Record<string, string> = browserHeaders(options.headers as Record<string, string>);
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, credentials: "include", headers });
+  if (res.status === 401 && retry && !path.startsWith("/api/auth/")) {
+    if (await restoreBrowserSession()) return apiFetch<T>(path, options, false);
+    tokenStore.clear();
+    throw new Error("Session expired. Please log in again.");
+  }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: "Request failed." }));
     throw new Error(err.message || "Request failed.");
   }
-
   return res.json() as Promise<T>;
 }
 
-// ── Auth API calls ────────────────────────────────────────────────────────────
-export interface AuthUser {
-  id:    string;
-  name:  string;
-  email: string;
-  role:  string;
-  is_verified?: number;
-  avatar_url?: string;
-}
-
-interface AuthResponse {
-  success: boolean;
-  message: string;
-  data: { user: AuthUser; accessToken: string; refreshToken: string };
-}
-
-export async function apiRegister(name: string, email: string, password: string, referralCode?: string) {
+export function apiRegister(name: string, email: string, password: string, referralCode?: string) {
   return apiFetch<AuthResponse>("/api/auth/register", {
     method: "POST",
-    body:   JSON.stringify({ name, email, password, referral_code: referralCode || undefined }),
+    body: JSON.stringify({ name, email, password, referral_code: referralCode || undefined }),
   });
 }
-
-export async function apiLogin(email: string, password: string) {
+export function apiLogin(email: string, password: string) {
   return apiFetch<AuthResponse>("/api/auth/login", {
-    method: "POST",
-    body:   JSON.stringify({ email, password }),
+    method: "POST", body: JSON.stringify({ email, password }),
   });
 }
-
-export async function apiLogout(refreshToken: string) {
-  return apiFetch("/api/auth/logout", {
-    method: "POST",
-    body:   JSON.stringify({ refreshToken }),
-  }).catch(() => {}); // best-effort
+export async function apiLogout() {
+  try {
+    csrfToken = await fetchCsrf();
+    if (!csrfToken) return;
+    await fetch(`${BASE_URL}/api/auth/logout`, {
+      method: "POST", credentials: "include",
+      headers: browserHeaders({ "X-CSRF-Token": csrfToken }),
+    });
+  } finally {
+    tokenStore.clear();
+    userChannel?.postMessage("logout");
+  }
 }

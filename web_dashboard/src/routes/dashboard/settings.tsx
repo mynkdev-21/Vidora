@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { User, Lock, CheckCircle, AlertCircle, Eye, EyeOff, Camera } from "lucide-react";
-import { apiFetch, API_KEY, BASE_URL } from "@/lib/api";
+import { apiFetch, API_KEY, BASE_URL, tokenStore } from "@/lib/api";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 
 export const Route = createFileRoute("/dashboard/settings")({
@@ -110,15 +110,8 @@ function SettingsPage() {
                 <AvatarUpload currentUrl={avatarUrl} onUploaded={(url) => {
                   setAvatarUrl(url);
                   if (profile) setProfile({...profile, avatar_url: url});
-                  // Update localStorage so navbar shows new avatar immediately
-                  const stored = localStorage.getItem("vdr_user");
-                  if (stored) {
-                    try {
-                      const u = JSON.parse(stored);
-                      u.avatar_url = url;
-                      localStorage.setItem("vdr_user", JSON.stringify(u));
-                    } catch {}
-                  }
+                  const stored = tokenStore.getUser();
+                  if (stored) tokenStore.updateUser({ ...stored, avatar_url: url });
                 }} />
               </div>
               <Msg type="success" msg={profileSuccess} />
@@ -206,7 +199,7 @@ function AvatarUpload({ currentUrl, onUploaded }: { currentUrl: string; onUpload
     formData.append("avatar", file);
 
     try {
-      const token = localStorage.getItem("vdr_access_token") || "";
+      const token = tokenStore.getAccess() || "";
       const res = await fetch(`${BASE_URL}/api/users/avatar`, {
         method: "POST",
         headers: {

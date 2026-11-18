@@ -5,7 +5,7 @@ import {
   Film, Image, FileArchive, Music, File,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
-import { apiFetch, API_KEY } from "@/lib/api";
+import { apiFetch, API_KEY, BASE_URL, tokenStore } from "@/lib/api";
 
 export const Route = createFileRoute("/dashboard/upload")({
   head: () => ({ meta: [{ title: "Upload — Vidora" }] }),
@@ -93,7 +93,7 @@ function UploadPage() {
     if (!selected) return;
     setError(""); setSuccess(false); setLoading(true); setProgress(0);
 
-    const token  = localStorage.getItem("vdr_access_token") || "";
+    const token  = tokenStore.getAccess() || "";
     const apiKey = API_KEY;
 
     const formData = new FormData();
@@ -130,8 +130,7 @@ function UploadPage() {
       setError("Network error. Please check your connection and try again.");
     });
 
-    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
-    xhr.open("POST", `${baseUrl}/api/files/upload`);
+    xhr.open("POST", `${BASE_URL}/api/files/upload`);
     if (token)  xhr.setRequestHeader("Authorization", `Bearer ${token}`);
     if (apiKey) xhr.setRequestHeader("X-API-Key", apiKey);
 
