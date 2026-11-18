@@ -8,14 +8,10 @@ import android.util.Base64;
 
 import com.mynk.vidora.api.ApiClient;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 
 /** User metadata in ordinary preferences; bearer tokens encrypted by Android Keystore. */
 public class PrefsManager {
@@ -23,7 +19,6 @@ public class PrefsManager {
     private static final String KEY_ALIAS = "vidora_session_aes_v1";
     private static final String ACCESS = "access";
     private static final String REFRESH = "refresh";
-    private static final int IV_BYTES = 12;
 
     private final SharedPreferences prefs;
     private final SharedPreferences securePrefs;
@@ -49,23 +44,11 @@ public class PrefsManager {
     }
 
     private String encrypt(String value) throws Exception {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key());
-        byte[] iv = cipher.getIV();
-        if (iv == null || iv.length != IV_BYTES) throw new IllegalStateException("Unexpected GCM IV");
-        byte[] ciphertext = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
-        return Base64.encodeToString(ByteBuffer.allocate(iv.length + ciphertext.length)
-            .put(iv).put(ciphertext).array(), Base64.NO_WRAP);
+        return Base64.encodeToString(TokenCipher.encrypt(key(), value), Base64.NO_WRAP);
     }
 
     private String decrypt(String encoded) throws Exception {
-        byte[] data = Base64.decode(encoded, Base64.NO_WRAP);
-        if (data.length <= IV_BYTES + 16) throw new IllegalArgumentException("Invalid encrypted token");
-        byte[] iv = new byte[IV_BYTES];
-        System.arraycopy(data, 0, iv, 0, IV_BYTES);
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, iv));
-        return new String(cipher.doFinal(data, IV_BYTES, data.length - IV_BYTES), StandardCharsets.UTF_8);
+        return TokenCipher.decrypt(key(), Base64.decode(encoded, Base64.NO_WRAP));
     }
 
     private void clearTokens() {
