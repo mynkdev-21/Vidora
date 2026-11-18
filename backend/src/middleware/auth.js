@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import pool from "../db/connection.js";
 import { config } from "../config.js";
+import { activeBrowserSession } from "../services/browser-session.js";
 
 const BANNED_SUPPORT_URL = "https://t.me/vidorasupport";
 
@@ -44,6 +45,9 @@ export async function authenticate(req, res, next) {
         support_url: banned ? BANNED_SUPPORT_URL : undefined,
       });
     }
+    if (decoded.sid && !(await activeBrowserSession("user", decoded.sid, user.id))) {
+      return res.status(401).json({ success: false, message: "Browser session expired.", code: "SESSION_EXPIRED" });
+    }
 
     req.user = { id: user.id, email: user.email, role: user.role };
     next();
@@ -66,7 +70,9 @@ export async function optionalAuthenticate(req, _res, next) {
   try {
     const decoded = verifyAccessToken(token);
     const user = await loadActiveUser(decoded.id);
-    if (user && user.is_active) req.user = { id: user.id, email: user.email, role: user.role };
+    if (user && user.is_active && (!decoded.sid || await activeBrowserSession("user", decoded.sid, user.id))) {
+      req.user = { id: user.id, email: user.email, role: user.role };
+    }
   } catch {
     // Treat as anonymous.
   }

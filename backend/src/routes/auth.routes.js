@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import rateLimit from "express-rate-limit";
-import { register, login, refresh, logout, me, forgotPassword, resetPassword } from "../controllers/auth.controller.js";
+import { register, login, refresh, logout, browserCsrf, me, forgotPassword, resetPassword } from "../controllers/auth.controller.js";
+import { browserMode, requireBrowserCsrf, requireTrustedBrowserOrigin } from "../services/browser-session.js";
 import { authenticate } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
 import { loginLimiters } from "../middleware/loginLimiter.js";
@@ -53,6 +54,7 @@ router.post(
       .isLength({ min: 6, max: 128 }).withMessage("Password must be 6–128 characters."),
   ],
   validate,
+  (req, res, next) => browserMode(req) ? requireTrustedBrowserOrigin(req, res, next) : next(),
   register
 );
 
@@ -71,14 +73,18 @@ router.post(
       .isLength({ max: 128 }).withMessage("Invalid password."),
   ],
   validate,
+  (req, res, next) => browserMode(req) ? requireTrustedBrowserOrigin(req, res, next) : next(),
   login
 );
 
 // POST /api/auth/refresh
-router.post("/refresh", refreshLimiter, refresh);
+router.get("/browser-csrf", requireTrustedBrowserOrigin, browserCsrf);
+router.post("/refresh", refreshLimiter,
+  (req, res, next) => browserMode(req) ? requireBrowserCsrf(req, res, next) : next(), refresh);
 
 // POST /api/auth/logout
-router.post("/logout", logout);
+router.post("/logout",
+  (req, res, next) => browserMode(req) ? requireBrowserCsrf(req, res, next) : next(), logout);
 
 // GET /api/auth/me  (protected)
 router.get("/me", authenticate, me);

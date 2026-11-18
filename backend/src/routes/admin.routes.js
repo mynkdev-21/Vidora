@@ -9,7 +9,8 @@ import pool from "../db/connection.js";
 import { uploadDir } from "../utils/paths.js";
 import { imageUploader, verifyImageContent } from "../utils/imageUpload.js";
 import { maskSettingMap, changedSettingEntries } from "../utils/settings.js";
-import { adminLogin, adminMe, adminUpdate } from "../controllers/admin-auth.controller.js";
+import { adminLogin, adminMe, adminUpdate, adminBrowserCsrf, adminBrowserRefresh, adminBrowserLogout } from "../controllers/admin-auth.controller.js";
+import { browserMode, requireBrowserCsrf, requireTrustedBrowserOrigin, createBrowserSession, setBrowserCookie } from "../services/browser-session.js";
 import {
   getStats,
   getUsers,
@@ -51,8 +52,12 @@ router.post(
     body("password").notEmpty().withMessage("Password is required."),
   ],
   validate,
+  (req, res, next) => browserMode(req) ? requireTrustedBrowserOrigin(req, res, next) : next(),
   adminLogin
 );
+router.get("/auth/browser-csrf", requireTrustedBrowserOrigin, adminBrowserCsrf);
+router.post("/auth/refresh", requireBrowserCsrf, adminBrowserRefresh);
+router.post("/auth/logout", requireBrowserCsrf, adminBrowserLogout);
 
 // ── Protected admin routes (require admin token) ─────────────────────────────
 router.use(authenticateAdmin);
@@ -128,6 +133,12 @@ router.post("/impersonate/:userId", async (req, res) => {
     if (!rows.length) return res.status(404).json({ success: false, message: "User not found." });
 
     const user = rows[0];
+    if (browserMode(req)) {
+      const session = await createBrowserSession("user", user.id, req.admin.id);
+      setBrowserCookie(res, "user", session.token);
+      await logAdminAction(req, "user.impersonate", { targetType: "user", targetId: user.id, details: { email: user.email, session_id: session.id } });
+      return res.json({ success: true, data: { user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar_url: user.avatar_url } } });
+    }
     const jwt = (await import("jsonwebtoken")).default;
     // `imp` records which admin minted the token, so actions taken with it are attributable.
     const token = jwt.sign(

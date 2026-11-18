@@ -35,6 +35,7 @@ const EXPECTED_TABLES = [
   "password_resets", "payment_methods", "payouts", "referrals", "refresh_tokens", "share_tokens",
   "stream_tokens", "subscriptions", "ticket_replies", "tickets", "user_api_keys", "users", "view_logs",
   "view_daily_counters",
+  "user_browser_sessions", "admin_browser_sessions",
 ];
 
 test("a clean install creates every table the code uses", async () => {

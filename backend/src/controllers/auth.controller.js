@@ -4,6 +4,11 @@ import { randomUUID as uuidv4 } from "crypto";
 import pool from "../db/connection.js";
 import crypto from "crypto";
 import { config } from "../config.js";
+import {
+  browserMode, createBrowserSession, readBrowserCookie, setBrowserCookie,
+  clearBrowserCookie, csrfFor, findBrowserSession, rotateBrowserSession,
+  revokeBrowserSession,
+} from "../services/browser-session.js";
 
 export const RESET_CODE_MAX_ATTEMPTS = 5;
 const RESET_CODE_TTL_MINUTES = 15;
@@ -46,6 +51,12 @@ function signAccessToken(payload) {
   });
 }
 
+function signBrowserAccessToken(payload, sessionId) {
+  return jwt.sign({ ...payload, sid: sessionId }, config.jwt.secret, {
+    expiresIn: "10m", algorithm: "HS256", jwtid: uuidv4(),
+  });
+}
+
 function signRefreshToken(payload) {
   return jwt.sign(payload, config.jwt.refreshSecret, {
     expiresIn: config.jwt.refreshExpiresIn,
@@ -83,7 +94,29 @@ export async function register(req, res, next) {
       [id, name.trim(), email.toLowerCase().trim(), passwordHash, referrerId]
     );
 
+    // Send welcome + verification email (non-blocking) for both mobile and web.
+    import("../utils/mailer.js").then(async ({ sendEmail, verificationEmail }) => {
+      const verifyToken = crypto.randomBytes(32).toString("hex");
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await pool.query(
+        "INSERT INTO email_verifications (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)",
+        [uuidv4(), id, verifyToken, expiresAt]
+      );
+      const verifyUrl = `${process.env.FRONTEND_URL || "http://localhost:8080"}/verify-email?token=${verifyToken}`;
+      sendEmail(email.toLowerCase().trim(), "Vidora — Verify Your Email", verificationEmail(name.trim(), verifyUrl));
+    }).catch(() => {});
+
     const tokenPayload = { id, email: email.toLowerCase().trim(), role: "creator" };
+    if (browserMode(req)) {
+      const session = await createBrowserSession("user", id);
+      setBrowserCookie(res, "user", session.token);
+      return res.status(201).json({
+        success: true, message: "Account created successfully.",
+        data: { user: { id, name: name.trim(), email: email.toLowerCase().trim(), role: "creator" },
+          accessToken: signBrowserAccessToken(tokenPayload, session.id), csrfToken: csrfFor(session.token) },
+      });
+    }
+
     const accessToken  = signAccessToken(tokenPayload);
     const refreshToken = signRefreshToken(tokenPayload);
 
@@ -94,19 +127,6 @@ export async function register(req, res, next) {
       "INSERT INTO refresh_tokens (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
       [uuidv4(), id, refreshHash, expiresAt]
     );
-
-    // Send welcome + verification email (non-blocking)
-    import("../utils/mailer.js").then(async ({ sendEmail, verificationEmail }) => {
-      const crypto = await import("crypto");
-      const verifyToken = crypto.randomBytes(32).toString("hex");
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-      await pool.query(
-        "INSERT INTO email_verifications (id, user_id, token, expires_at) VALUES (?, ?, ?, ?)",
-        [uuidv4(), id, verifyToken, expiresAt]
-      );
-      const verifyUrl = `${process.env.FRONTEND_URL || "http://localhost:8080"}/verify-email?token=${verifyToken}`;
-      sendEmail(email.toLowerCase().trim(), "Vidora — Verify Your Email", verificationEmail(name.trim(), verifyUrl));
-    }).catch(() => {});
 
     res.status(201).json({
       success: true,
@@ -151,6 +171,16 @@ export async function login(req, res, next) {
     }
 
     const tokenPayload = { id: user.id, email: user.email, role: user.role };
+    if (browserMode(req)) {
+      const session = await createBrowserSession("user", user.id);
+      setBrowserCookie(res, "user", session.token);
+      return res.json({
+        success: true, message: "Login successful.",
+        data: { user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar_url: user.avatar_url || null },
+          accessToken: signBrowserAccessToken(tokenPayload, session.id), csrfToken: csrfFor(session.token) },
+      });
+    }
+
     const accessToken  = signAccessToken(tokenPayload);
     const refreshToken = signRefreshToken(tokenPayload);
 
@@ -179,6 +209,26 @@ export async function login(req, res, next) {
 // ── POST /api/auth/refresh ───────────────────────────────────────────────────
 export async function refresh(req, res, next) {
   try {
+    if (browserMode(req)) {
+      const previous = readBrowserCookie(req, "user");
+      const session = await rotateBrowserSession("user", previous);
+      if (!session) return res.status(401).json({ success: false, message: "Browser session expired." });
+      const [rows] = await pool.query("SELECT id, name, email, role, avatar_url, is_active FROM users WHERE id = ?", [session.principalId]);
+      const user = rows[0];
+      if (!user?.is_active) {
+        await revokeBrowserSession("user", session.token);
+        clearBrowserCookie(res, "user");
+        return res.status(401).json({ success: false, message: "Browser session expired." });
+      }
+      setBrowserCookie(res, "user", session.token);
+      return res.json({
+        success: true,
+        data: { accessToken: signBrowserAccessToken({ id: user.id, email: user.email, role: user.role,
+          ...(session.impAdminId ? { imp: session.impAdminId } : {}) }, session.id),
+          csrfToken: csrfFor(session.token),
+          user: { id: user.id, name: user.name, email: user.email, role: user.role, avatar_url: user.avatar_url || null } },
+      });
+    }
     const { refreshToken } = req.body;
     if (!refreshToken) {
       return res.status(400).json({ success: false, message: "Refresh token required." });
@@ -239,6 +289,11 @@ export async function refresh(req, res, next) {
 // ── POST /api/auth/logout ────────────────────────────────────────────────────
 export async function logout(req, res, next) {
   try {
+    if (browserMode(req)) {
+      await revokeBrowserSession("user", readBrowserCookie(req, "user"));
+      clearBrowserCookie(res, "user");
+      return res.json({ success: true, message: "Logged out successfully." });
+    }
     const { refreshToken } = req.body;
 
     if (refreshToken) {
@@ -257,6 +312,16 @@ export async function logout(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+export async function browserCsrf(req, res, next) {
+  try {
+    const token = readBrowserCookie(req, "user");
+    const session = await findBrowserSession("user", token);
+    if (!session) return res.status(401).json({ success: false, message: "Browser session expired." });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ success: true, data: { csrfToken: csrfFor(token) } });
+  } catch (err) { next(err); }
 }
 
 // ── GET /api/auth/me ─────────────────────────────────────────────────────────

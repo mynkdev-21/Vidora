@@ -2,11 +2,17 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { randomUUID as uuidv4 } from "crypto";
 import pool from "../db/connection.js";
+import {
+  browserMode, createBrowserSession, readBrowserCookie, setBrowserCookie,
+  clearBrowserCookie, csrfFor, findBrowserSession, rotateBrowserSession,
+  revokeBrowserSession,
+} from "../services/browser-session.js";
 
 const SALT_ROUNDS = 12;
 
-function signAdminToken(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "24h" });
+function signAdminToken(payload, sessionId) {
+  return jwt.sign(sessionId ? { ...payload, sid: sessionId } : payload,
+    process.env.JWT_SECRET, { expiresIn: sessionId ? "10m" : "24h", algorithm: "HS256" });
 }
 
 // ── POST /api/admin/auth/login ───────────────────────────────────────────────
@@ -37,6 +43,16 @@ export async function adminLogin(req, res, next) {
     // Update last login
     await pool.query("UPDATE admins SET last_login = NOW() WHERE id = ?", [admin.id]);
 
+    if (browserMode(req)) {
+      const session = await createBrowserSession("admin", admin.id);
+      setBrowserCookie(res, "admin", session.token);
+      return res.json({
+        success: true, message: "Admin login successful.",
+        data: { admin: { id: admin.id, name: admin.name, email: admin.email },
+          token: signAdminToken({ id: admin.id, email: admin.email, role: "admin" }, session.id),
+          csrfToken: csrfFor(session.token) },
+      });
+    }
     const token = signAdminToken({ id: admin.id, email: admin.email, role: "admin" });
 
     res.json({
@@ -50,6 +66,43 @@ export async function adminLogin(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+export async function adminBrowserCsrf(req, res, next) {
+  try {
+    const token = readBrowserCookie(req, "admin");
+    const session = await findBrowserSession("admin", token);
+    if (!session) return res.status(401).json({ success: false, message: "Admin session expired." });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ success: true, data: { csrfToken: csrfFor(token) } });
+  } catch (err) { next(err); }
+}
+
+export async function adminBrowserRefresh(req, res, next) {
+  try {
+    const session = await rotateBrowserSession("admin", readBrowserCookie(req, "admin"));
+    if (!session) return res.status(401).json({ success: false, message: "Admin session expired." });
+    const [[admin]] = await pool.query("SELECT id, name, email, is_active FROM admins WHERE id = ?", [session.principalId]);
+    if (!admin?.is_active) {
+      await revokeBrowserSession("admin", session.token);
+      clearBrowserCookie(res, "admin");
+      return res.status(401).json({ success: false, message: "Admin session expired." });
+    }
+    setBrowserCookie(res, "admin", session.token);
+    res.json({ success: true, data: {
+      admin: { id: admin.id, name: admin.name, email: admin.email },
+      token: signAdminToken({ id: admin.id, email: admin.email, role: "admin" }, session.id),
+      csrfToken: csrfFor(session.token),
+    } });
+  } catch (err) { next(err); }
+}
+
+export async function adminBrowserLogout(req, res, next) {
+  try {
+    await revokeBrowserSession("admin", readBrowserCookie(req, "admin"));
+    clearBrowserCookie(res, "admin");
+    res.json({ success: true, message: "Logged out successfully." });
+  } catch (err) { next(err); }
 }
 
 // ── GET /api/admin/auth/me ───────────────────────────────────────────────────

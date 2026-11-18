@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import pool from "../db/connection.js";
+import { activeBrowserSession } from "../services/browser-session.js";
 
 /**
  * Verifies admin JWT token from Authorization: Bearer <token>
@@ -14,7 +15,7 @@ export async function authenticateAdmin(req, res, next) {
     }
 
     const token = authHeader.split(" ")[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ["HS256"] });
 
     // Must be from admin role
     if (decoded.role !== "admin") {
@@ -29,6 +30,9 @@ export async function authenticateAdmin(req, res, next) {
 
     if (!rows.length || !rows[0].is_active) {
       return res.status(401).json({ success: false, message: "Admin account not found or deactivated." });
+    }
+    if (decoded.sid && !(await activeBrowserSession("admin", decoded.sid, decoded.id))) {
+      return res.status(401).json({ success: false, message: "Admin session expired.", code: "SESSION_EXPIRED" });
     }
 
     req.admin = { id: rows[0].id, email: rows[0].email };

@@ -43,7 +43,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Bot-User-Id", "X-User-Api-Key", "Range"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-API-Key", "X-Bot-User-Id", "X-User-Api-Key", "X-Session-Mode", "X-CSRF-Token", "X-View-Ticket", "Range"],
 }));
 
 // ── Body parsing ──────────────────────────────────────────────────────────────
