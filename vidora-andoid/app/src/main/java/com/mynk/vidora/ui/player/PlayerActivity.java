@@ -272,10 +272,21 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void playVideo(String fileId) {
+        viewTracker = new ViewTracker(fileId, () -> player != null && player.isPlaying());
+        viewTracker.startWithTicket(ticket -> playVideoWithTicket(fileId, ticket));
+    }
+
+    private void playVideoWithTicket(String fileId, String ticket) {
+        if (isFinishing() || isDestroyed()) return;
         String videoUrl = Constants.BASE_URL + "api/play/" + fileId;
 
         Map<String, String> headers = new HashMap<>();
         headers.put("X-API-Key", Constants.API_KEY);
+        String accessToken = new com.mynk.vidora.utils.PrefsManager(this).getAccessToken();
+        if (ticket != null && accessToken != null) {
+            headers.put("Authorization", "Bearer " + accessToken);
+            headers.put("X-View-Ticket", ticket);
+        }
 
         DefaultHttpDataSource.Factory dataSourceFactory = new DefaultHttpDataSource.Factory()
             .setDefaultRequestProperties(headers);
@@ -306,11 +317,6 @@ public class PlayerActivity extends AppCompatActivity {
                     ivPlayPause.setImageResource(R.drawable.ic_pause);
                     startProgressUpdater();
 
-                    // Start the server-validated view (counted after the minimum watch time)
-                    if (viewTracker == null) {
-                        viewTracker = new ViewTracker(fileId, () -> player != null && player.isPlaying());
-                        viewTracker.start();
-                    }
                 } else if (state == Player.STATE_ENDED) {
                     ivPlayPause.setImageResource(R.drawable.ic_play);
                     controlsOverlay.setVisibility(View.VISIBLE);

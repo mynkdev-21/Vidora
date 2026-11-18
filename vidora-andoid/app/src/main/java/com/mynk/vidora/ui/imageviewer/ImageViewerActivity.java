@@ -25,6 +25,7 @@ import androidx.annotation.Nullable;
 public class ImageViewerActivity extends AppCompatActivity {
 
     private ViewTracker viewTracker;
+    private boolean imageReady;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,14 +63,27 @@ public class ImageViewerActivity extends AppCompatActivity {
                 })
                 .into(ivImage);
         } else {
-            // Load from API
-            String imageUrl = Constants.BASE_URL + "api/play/" + token;
+            if (token != null && !token.isEmpty()) {
+                viewTracker = new ViewTracker(token, () -> imageReady && !isFinishing() && hasWindowFocus());
+                viewTracker.startWithTicket(ticket -> loadRemoteImage(token, ticket, ivImage, progressBar));
+            } else {
+                progressBar.setVisibility(View.GONE);
+            }
+        }
+    }
 
-            Glide.with(this)
-                .load(new com.bumptech.glide.load.model.GlideUrl(imageUrl,
-                    new com.bumptech.glide.load.model.LazyHeaders.Builder()
-                        .addHeader("X-API-Key", Constants.API_KEY)
-                        .build()))
+    private void loadRemoteImage(String token, String ticket, ImageView ivImage, ProgressBar progressBar) {
+        if (isFinishing() || isDestroyed()) return;
+        String imageUrl = Constants.BASE_URL + "api/play/" + token;
+        com.bumptech.glide.load.model.LazyHeaders.Builder headers =
+            new com.bumptech.glide.load.model.LazyHeaders.Builder().addHeader("X-API-Key", Constants.API_KEY);
+        String accessToken = new com.mynk.vidora.utils.PrefsManager(this).getAccessToken();
+        if (ticket != null && accessToken != null) {
+            headers.addHeader("Authorization", "Bearer " + accessToken);
+            headers.addHeader("X-View-Ticket", ticket);
+        }
+        Glide.with(this)
+                .load(new com.bumptech.glide.load.model.GlideUrl(imageUrl, headers.build()))
                 .listener(new RequestListener<Drawable>() {
                     @Override
                     public boolean onLoadFailed(@Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
@@ -79,17 +93,11 @@ public class ImageViewerActivity extends AppCompatActivity {
                     @Override
                     public boolean onResourceReady(Drawable resource, Object model, Target<Drawable> target, DataSource dataSource, boolean isFirstResource) {
                         progressBar.setVisibility(View.GONE);
+                        imageReady = true;
                         return false;
                     }
                 })
                 .into(ivImage);
-
-            // Server-validated view: counted after the minimum display time (online only)
-            if (token != null) {
-                viewTracker = new ViewTracker(token, () -> !isFinishing() && hasWindowFocus());
-                viewTracker.start();
-            }
-        }
     }
 
     @Override

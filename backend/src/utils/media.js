@@ -54,19 +54,29 @@ export function setContentSafetyHeaders(res, mimeType) {
 }
 
 function pipeStream(stream, res, onDelivered, delivery) {
-  let ended = false;
   let observedBytes = 0;
-  stream.on("data", (chunk) => { observedBytes += chunk.length; });
-  stream.on("end", () => { ended = true; });
-  if (onDelivered) res.once("finish", () => {
-    if (ended) Promise.resolve(onDelivered({ ...delivery, bytes: observedBytes }))
-      .catch((err) => console.error("Delivery evidence error:", err.message));
+  let recorded = false;
+  const threshold = Math.min(64 * 1024, Math.max(1, Math.ceil(delivery.total * 0.1)));
+  stream.on("data", (chunk) => {
+    stream.pause();
+    res.write(chunk, () => {
+      if (res.destroyed) return;
+      observedBytes += chunk.length;
+      if (onDelivered && !recorded && delivery.start === 0 &&
+          Number.isSafeInteger(delivery.total) && delivery.total > 0 && observedBytes >= threshold) {
+        recorded = true;
+        Promise.resolve(onDelivered({ ...delivery, bytes: observedBytes }))
+          .catch((err) => console.error("Delivery evidence error:", err.message));
+      }
+      stream.resume();
+    });
   });
+  stream.on("end", () => res.end());
+  res.on("close", () => stream.destroy());
   stream.on("error", (err) => {
     console.error("Media stream error:", err.message);
     res.destroy(err);
   });
-  stream.pipe(res);
 }
 
 /**
