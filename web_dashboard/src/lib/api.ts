@@ -1,8 +1,13 @@
 /** Browser authentication: in-memory access token, HttpOnly refresh cookie. */
 const configuredUrl = import.meta.env.VITE_API_URL || "http://localhost:5001";
-export const BASE_URL = typeof window !== "undefined" && import.meta.env.DEV
-  ? `${window.location.protocol}//${window.location.hostname}:5001`
-  : configuredUrl;
+const localHost = (host: string) => /^(localhost|127\.\d+\.\d+\.\d+|10\.\d+\.\d+\.\d+|192\.168\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)$/i.test(host);
+function browserApiUrl() {
+  if (typeof window === "undefined" || !import.meta.env.DEV) return configuredUrl;
+  const url = new URL(configuredUrl);
+  if (localHost(url.hostname) && localHost(window.location.hostname)) url.hostname = window.location.hostname;
+  return url.origin;
+}
+export const BASE_URL = browserApiUrl();
 export const API_KEY: string = import.meta.env.VITE_API_KEY || "";
 
 export interface AuthUser {
