@@ -101,7 +101,7 @@
                         android:layout_height="64dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_play"
-                        android:tint="@color/purple_primary"
+                        app:tint="@color/purple_primary"
                         android:contentDescription="File type" />
                 </FrameLayout>
             </androidx.cardview.widget.CardView>
@@ -153,7 +153,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_home"
-                        android:tint="@color/purple_light"
+                        app:tint="@color/purple_light"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="Size" />
 
@@ -194,7 +194,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_play"
-                        android:tint="@color/purple_light"
+                        app:tint="@color/purple_light"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="Type" />
 
@@ -245,7 +245,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_search"
-                        android:tint="@color/purple_light"
+                        app:tint="@color/purple_light"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="Views" />
 
@@ -286,7 +286,7 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:src="@drawable/ic_person"
-                        android:tint="@color/purple_light"
+                        app:tint="@color/purple_light"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="Uploader" />
 
@@ -341,7 +341,7 @@
                             android:layout_height="22dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_bookmark"
-                            android:tint="@color/purple_light"
+                            app:tint="@color/purple_light"
                             android:contentDescription="Bookmark" />
                     </FrameLayout>
 
@@ -372,7 +372,7 @@
                             android:layout_height="22dp"
                             android:layout_gravity="center"
                             android:src="@drawable/ic_share"
-                            android:tint="@color/purple_light"
+                            app:tint="@color/purple_light"
                             android:contentDescription="Share" />
                     </FrameLayout>
 

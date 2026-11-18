@@ -130,7 +130,7 @@
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:src="@drawable/ic_mail_outline"
-                        android:tint="#fbbf24"
+                        app:tint="#fbbf24"
                         android:layout_marginEnd="10dp" />
 
                     <TextView
@@ -197,7 +197,7 @@
                     <!-- Notifications -->
                     <LinearLayout android:id="@+id/row_notifications" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_bell_on" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_bell_on" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="Notifications" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <androidx.appcompat.widget.SwitchCompat
@@ -212,7 +212,7 @@
                     <!-- Privacy -->
                     <LinearLayout android:id="@+id/btn_privacy" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_person" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_person" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="Privacy Policy" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />
@@ -223,7 +223,7 @@
                     <!-- Help & Support -->
                     <LinearLayout android:id="@+id/btn_help" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_search" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_search" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="Help &amp; Support" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />
@@ -234,7 +234,7 @@
                     <!-- About -->
                     <LinearLayout android:id="@+id/btn_about" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_info" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_info" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="About" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />
@@ -245,7 +245,7 @@
                     <!-- Downloads -->
                     <LinearLayout android:id="@+id/btn_downloads" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_download" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_download" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="Downloads" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />
@@ -267,7 +267,7 @@
                         android:layout_width="36dp"
                         android:layout_height="36dp"
                         android:src="@drawable/ic_crown"
-                        android:tint="#fbbf24"
+                        app:tint="#fbbf24"
                         android:padding="4dp" />
 
                     <LinearLayout
@@ -338,7 +338,7 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:src="@drawable/ic_person"
-                    android:tint="@color/purple_light"
+                    app:tint="@color/purple_light"
                     android:layout_marginBottom="20dp" />
 
                 <TextView
@@ -398,7 +398,7 @@
                     <!-- Privacy -->
                     <LinearLayout android:id="@+id/btn_privacy_out" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_person" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_person" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="Privacy Policy" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />
@@ -409,7 +409,7 @@
                     <!-- About -->
                     <LinearLayout android:id="@+id/btn_about_out" android:layout_width="match_parent" android:layout_height="wrap_content"
                         android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp">
-                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_info" android:tint="@color/purple_light" />
+                        <ImageView android:layout_width="20dp" android:layout_height="20dp" android:src="@drawable/ic_info" app:tint="@color/purple_light" />
                         <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
                             android:text="About" android:textSize="15sp" android:textColor="@color/text_primary" android:layout_marginStart="14dp" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="›" android:textSize="20sp" android:textColor="@color/text_dim" />

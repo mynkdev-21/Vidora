@@ -66,7 +66,7 @@
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:src="@drawable/ic_link"
-            android:tint="@color/text_muted"
+            app:tint="@color/text_muted"
             android:contentDescription="Link" />
 
         <EditText
@@ -89,7 +89,7 @@
             android:layout_width="@dimen/touch_target"
             android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_search"
-            android:tint="@color/purple_light"
+            app:tint="@color/purple_light"
             android:contentDescription="Go" />
     </LinearLayout>
 

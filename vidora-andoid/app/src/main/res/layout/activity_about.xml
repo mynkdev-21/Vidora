@@ -114,7 +114,7 @@
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:src="@drawable/ic_home"
-                        android:tint="@color/purple_light" />
+                        app:tint="@color/purple_light" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -148,7 +148,7 @@
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:src="@drawable/ic_play"
-                        android:tint="@color/purple_light" />
+                        app:tint="@color/purple_light" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -182,7 +182,7 @@
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:src="@drawable/ic_share"
-                        android:tint="@color/purple_light" />
+                        app:tint="@color/purple_light" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -216,7 +216,7 @@
                         android:layout_width="22dp"
                         android:layout_height="22dp"
                         android:src="@drawable/ic_instagram"
-                        android:tint="@color/purple_light" />
+                        app:tint="@color/purple_light" />
 
                     <LinearLayout
                         android:layout_width="0dp"

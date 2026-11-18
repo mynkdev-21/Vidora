@@ -37,15 +37,15 @@
                 android:gravity="center_vertical">
 
                 <FrameLayout android:id="@+id/btn_rewind" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginEnd="24dp" android:background="@drawable/bg_round_rect_15" android:contentDescription="Rewind ten seconds">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center" android:src="@drawable/ic_replay" android:tint="#FFFFFF" />
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center" android:src="@drawable/ic_replay" app:tint="#FFFFFF" />
                 </FrameLayout>
 
                 <FrameLayout android:id="@+id/btn_play_pause" android:layout_width="64dp" android:layout_height="64dp" android:background="@drawable/bg_round_rect_15" android:contentDescription="Play or pause">
-                    <ImageView android:id="@+id/iv_play_pause" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:src="@drawable/ic_pause" android:tint="#A78BFA" />
+                    <ImageView android:id="@+id/iv_play_pause" android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:src="@drawable/ic_pause" app:tint="#A78BFA" />
                 </FrameLayout>
 
                 <FrameLayout android:id="@+id/btn_forward" android:layout_width="48dp" android:layout_height="48dp" android:layout_marginStart="24dp" android:background="@drawable/bg_round_rect_15" android:contentDescription="Forward ten seconds">
-                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center" android:src="@drawable/ic_forward" android:tint="#FFFFFF" />
+                    <ImageView android:layout_width="24dp" android:layout_height="24dp" android:layout_gravity="center" android:src="@drawable/ic_forward" app:tint="#FFFFFF" />
                 </FrameLayout>
             </LinearLayout>
 
@@ -56,7 +56,7 @@
                     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" / " android:textColor="#60FFFFFF" android:textSize="12sp" />
                     <TextView android:id="@+id/tv_total_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="00:00" android:textColor="#CCFFFFFF" android:textSize="12sp" />
                     <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-                    <ImageView android:id="@+id/btn_fullscreen" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_fullscreen" android:padding="12dp" android:tint="@color/white" android:contentDescription="Fullscreen" />
+                    <ImageView android:id="@+id/btn_fullscreen" android:layout_width="48dp" android:layout_height="48dp" android:src="@drawable/ic_fullscreen" android:padding="12dp" app:tint="@color/white" android:contentDescription="Fullscreen" />
                 </LinearLayout>
             </LinearLayout>
 

@@ -61,7 +61,7 @@
                 android:layout_width="64dp"
                 android:layout_height="64dp"
                 android:src="@drawable/ic_add"
-                android:tint="@color/purple_light"
+                app:tint="@color/purple_light"
                 android:layout_marginBottom="16dp" />
 
             <TextView
@@ -183,7 +183,7 @@
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:src="@drawable/ic_check_circle"
-                android:tint="#34d399"
+                app:tint="#34d399"
                 android:layout_marginBottom="16dp" />
 
             <TextView

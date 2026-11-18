@@ -42,7 +42,7 @@
                         android:layout_height="14dp"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_play"
-                        android:tint="@color/bg_primary"
+                        app:tint="@color/bg_primary"
                         android:contentDescription="Play" />
                 </FrameLayout>
             </FrameLayout>
@@ -67,7 +67,7 @@
                     android:layout_height="12dp"
                     android:layout_gravity="center"
                     android:src="@drawable/ic_play"
-                    android:tint="@color/bg_primary"
+                    app:tint="@color/bg_primary"
                     android:contentDescription="Play" />
             </FrameLayout>
         </FrameLayout>

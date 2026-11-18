@@ -71,7 +71,8 @@ public class HomeActivity extends AppCompatActivity {
 
         // Register banned receiver
         IntentFilter filter = new IntentFilter(ApiClient.ACTION_ACCOUNT_BANNED);
-        registerReceiver(bannedReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        androidx.core.content.ContextCompat.registerReceiver(this, bannedReceiver, filter,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED);
 
         setupViews();
         checkConnectivity();

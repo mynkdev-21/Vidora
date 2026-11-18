@@ -158,9 +158,10 @@ public class SubscriptionsListActivity extends AppCompatActivity {
                 ApiClient.getService().unsubscribe(id).enqueue(new Callback<Map<String, Object>>() {
                     @Override
                     public void onResponse(Call<Map<String, Object>> call2, Response<Map<String, Object>> resp) {
-                        subscriptions.remove(position);
-                        notifyItemRemoved(position);
-                        notifyItemRangeChanged(position, subscriptions.size());
+                        int current = subscriptions.indexOf(sub);
+                        if (current == -1) return;
+                        subscriptions.remove(current);
+                        notifyItemRemoved(current);
                         if (subscriptions.isEmpty()) layoutEmpty.setVisibility(View.VISIBLE);
                     }
                     @Override

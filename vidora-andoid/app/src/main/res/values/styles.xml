@@ -45,7 +45,8 @@
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textColorHint">@color/text_muted</item>
         <item name="android:minHeight">@dimen/touch_target</item>
-        <item name="android:paddingHorizontal">@dimen/space_4</item>
+        <item name="android:paddingLeft">@dimen/space_4</item>
+        <item name="android:paddingRight">@dimen/space_4</item>
     </style>
     <style name="Vidora.Control.Icon">
         <item name="android:background">@drawable/bg_icon_button</item>

@@ -263,6 +263,7 @@ public class PlayerActivity extends AppCompatActivity {
         }, 4000);
     }
 
+    @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     private void playLocalVideo(String filePath) {
         player = new ExoPlayer.Builder(this)
             .setRenderersFactory(new DefaultRenderersFactory(this)
@@ -295,6 +296,7 @@ public class PlayerActivity extends AppCompatActivity {
         viewTracker.startWithTicket(ticket -> playVideoWithTicket(fileId, ticket));
     }
 
+    @androidx.annotation.OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)
     private void playVideoWithTicket(String fileId, String ticket) {
         if (isFinishing() || isDestroyed()) return;
         String videoUrl = com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + "api/play/" + fileId;

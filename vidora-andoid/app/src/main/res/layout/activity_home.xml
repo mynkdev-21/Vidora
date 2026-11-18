@@ -34,7 +34,7 @@
         android:padding="@dimen/space_3" android:layout_marginHorizontal="@dimen/content_gutter"
         android:visibility="gone" app:layout_constraintTop_toBottomOf="@id/top_bar">
         <ImageView android:layout_width="20dp" android:layout_height="20dp"
-            android:src="@drawable/ic_mail_outline" android:tint="@color/purple_light"
+            android:src="@drawable/ic_mail_outline" app:tint="@color/purple_light"
             android:contentDescription="Email verification" />
         <TextView style="@style/Vidora.Text.Body" android:layout_width="0dp"
             android:layout_height="wrap_content" android:layout_weight="1"
@@ -72,7 +72,7 @@
                 android:layout_marginTop="@dimen/space_5"
                 android:paddingStart="@dimen/space_4" android:paddingEnd="@dimen/space_2">
                 <ImageView android:layout_width="22dp" android:layout_height="22dp"
-                    android:src="@drawable/ic_link" android:tint="@color/text_muted"
+                    android:src="@drawable/ic_link" app:tint="@color/text_muted"
                     android:contentDescription="Shared link" />
                 <EditText android:id="@+id/et_link"
                     android:layout_width="0dp" android:layout_height="@dimen/touch_target"
@@ -83,7 +83,7 @@
                     android:textSize="14sp" />
                 <ImageView android:id="@+id/btn_play" style="@style/Vidora.Control.Icon"
                     android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
-                    android:src="@drawable/ic_forward" android:tint="@color/purple_light"
+                    android:src="@drawable/ic_forward" app:tint="@color/purple_light"
                     android:contentDescription="Open shared link" />
             </LinearLayout>
 
@@ -157,7 +157,7 @@
         android:visibility="gone" app:layout_constraintTop_toBottomOf="@id/top_bar"
         app:layout_constraintBottom_toTopOf="@id/bottom_nav">
         <ImageView android:layout_width="48dp" android:layout_height="48dp"
-            android:src="@drawable/ic_wifi_off" android:tint="@color/text_muted"
+            android:src="@drawable/ic_wifi_off" app:tint="@color/text_muted"
             android:contentDescription="Offline" />
         <TextView style="@style/Vidora.Text.Title" android:layout_width="wrap_content"
             android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_3"

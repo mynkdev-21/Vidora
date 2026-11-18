@@ -21,7 +21,7 @@
         android:gravity="center"
         android:orientation="vertical">
         <ImageView android:layout_width="26dp" android:layout_height="26dp"
-            android:src="@drawable/ic_home" android:tint="@color/text_dim" />
+            android:src="@drawable/ic_home" app:tint="@color/text_dim" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Home" android:textSize="11sp" android:textColor="@color/text_dim" android:layout_marginTop="4dp" />
     </LinearLayout>
@@ -35,7 +35,7 @@
         android:gravity="center"
         android:orientation="vertical">
         <ImageView android:layout_width="26dp" android:layout_height="26dp"
-            android:src="@drawable/ic_feed" android:tint="@color/text_dim" />
+            android:src="@drawable/ic_feed" app:tint="@color/text_dim" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Feed" android:textSize="11sp" android:textColor="@color/text_dim" android:layout_marginTop="4dp" />
     </LinearLayout>
@@ -58,7 +58,7 @@
                 android:layout_height="26dp"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_add"
-                android:tint="@color/white" />
+                app:tint="@color/white" />
         </androidx.cardview.widget.CardView>
     </FrameLayout>
 
@@ -71,7 +71,7 @@
         android:gravity="center"
         android:orientation="vertical">
         <ImageView android:layout_width="26dp" android:layout_height="26dp"
-            android:src="@drawable/ic_bookmark" android:tint="@color/text_dim" />
+            android:src="@drawable/ic_bookmark" app:tint="@color/text_dim" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Saved" android:textSize="11sp" android:textColor="@color/text_dim" android:layout_marginTop="4dp" />
     </LinearLayout>
@@ -85,7 +85,7 @@
         android:gravity="center"
         android:orientation="vertical">
         <ImageView android:layout_width="26dp" android:layout_height="26dp"
-            android:src="@drawable/ic_person" android:tint="@color/text_dim" />
+            android:src="@drawable/ic_person" app:tint="@color/text_dim" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
             android:text="Profile" android:textSize="11sp" android:textColor="@color/text_dim" android:layout_marginTop="4dp" />
     </LinearLayout>
