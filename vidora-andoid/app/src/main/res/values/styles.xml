@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Vidora" />
+    <style name="Vidora.Text" />
+    <style name="Vidora.Control" />
+    <style name="Vidora.Text.Display">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+    <style name="Vidora.Text.Title">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+    <style name="Vidora.Text.Section">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+    <style name="Vidora.Text.Body">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/text_secondary</item>
+    </style>
+    <style name="Vidora.Text.Caption">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/text_muted</item>
+    </style>
+    <style name="Vidora.Control.Primary">
+        <item name="android:background">@drawable/bg_btn_purple</item>
+        <item name="android:textColor">@color/text_on_accent</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:minHeight">@dimen/touch_target</item>
+        <item name="android:gravity">center</item>
+    </style>
+    <style name="Vidora.Control.Secondary" parent="Vidora.Control.Primary">
+        <item name="android:background">@drawable/bg_btn_outline_purple</item>
+        <item name="android:textColor">@color/purple_light</item>
+    </style>
+    <style name="Vidora.Control.Input">
+        <item name="android:background">@drawable/bg_input</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="android:minHeight">@dimen/touch_target</item>
+        <item name="android:paddingHorizontal">@dimen/space_4</item>
+    </style>
+    <style name="Vidora.Control.Icon">
+        <item name="android:background">@drawable/bg_icon_button</item>
+        <item name="android:minWidth">@dimen/touch_target</item>
+        <item name="android:minHeight">@dimen/touch_target</item>
+        <item name="android:padding">@dimen/space_3</item>
+    </style>
+</resources>

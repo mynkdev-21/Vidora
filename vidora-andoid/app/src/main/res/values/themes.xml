@@ -4,6 +4,10 @@
         <item name="colorPrimary">@color/purple_primary</item>
         <item name="colorPrimaryVariant">@color/purple_light</item>
         <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/purple_light</item>
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif</item>
         <item name="android:windowBackground">@color/bg_primary</item>
         <item name="android:statusBarColor">@color/bg_primary</item>
         <item name="android:navigationBarColor">@color/bg_card</item>
