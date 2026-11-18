@@ -36,6 +36,8 @@ public class EarningsActivity extends AppCompatActivity {
     private double available = Double.NaN;
     private double minimum = Double.NaN;
     private String referralCode;
+    private int earningsPage = 1;
+    private boolean earningsLoading;
 
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
@@ -55,6 +57,7 @@ public class EarningsActivity extends AppCompatActivity {
             share.putExtra(Intent.EXTRA_TEXT, Constants.WEB_BASE_URL + "signup?ref=" + referralCode);
             startActivity(Intent.createChooser(share, "Share referral link"));
         });
+        findViewById(R.id.btn_more_earnings).setOnClickListener(v -> loadHistory());
         loadAll();
     }
 
@@ -99,7 +102,10 @@ public class EarningsActivity extends AppCompatActivity {
                 status("Network error. Tap to retry.");
             }
         });
-        findViewById(R.id.tv_status).setOnClickListener(v -> loadSummary());
+        findViewById(R.id.tv_status).setOnClickListener(v -> {
+            earningsPage = 1;
+            loadAll();
+        });
     }
 
     private void loadMethods() {
@@ -145,14 +151,24 @@ public class EarningsActivity extends AppCompatActivity {
     }
 
     private void loadHistory() {
-        ApiClient.getService().getEarningsHistory(1, 20).enqueue(new Callback<Map<String, Object>>() {
+        if (earningsLoading) return;
+        earningsLoading = true;
+        ApiClient.getService().getEarningsHistory(earningsPage, 20).enqueue(new Callback<Map<String, Object>>() {
             @Override public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (isFinishing()) return;
+                earningsLoading = false;
                 Map<String, Object> values = data(response);
-                showRows(R.id.list_earnings, values == null ? null : values.get("earnings"), "No earnings yet", "type", "amount", "created_at");
+                if (values == null) { status("Could not load earnings history. Tap to retry."); return; }
+                showRows(R.id.list_earnings, values == null ? null : values.get("earnings"),
+                    earningsPage == 1 ? "No earnings yet" : "", "type", "amount", "created_at", earningsPage == 1);
+                Object pagination = values == null ? null : values.get("pagination");
+                double pages = pagination instanceof Map ? number(((Map<?, ?>) pagination).get("pages")) : 0;
+                findViewById(R.id.btn_more_earnings).setVisibility(earningsPage < pages ? View.VISIBLE : View.GONE);
+                earningsPage++;
             }
             @Override public void onFailure(Call<Map<String, Object>> call, Throwable cause) {
-                if (!isFinishing()) showRows(R.id.list_earnings, null, "Could not load earnings history", "type", "amount", "created_at");
+                earningsLoading = false;
+                if (!isFinishing()) status("Could not load earnings history. Tap to retry.");
             }
         });
     }
@@ -162,18 +178,19 @@ public class EarningsActivity extends AppCompatActivity {
             @Override public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
                 if (isFinishing()) return;
                 Map<String, Object> values = data(response);
-                showRows(R.id.list_payouts, values == null ? null : values.get("payouts"), "No payout requests yet", "status", "amount", "requested_at");
+                showRows(R.id.list_payouts, values == null ? null : values.get("payouts"), "No payout requests yet", "status", "amount", "requested_at", true);
             }
             @Override public void onFailure(Call<Map<String, Object>> call, Throwable cause) {
-                if (!isFinishing()) showRows(R.id.list_payouts, null, "Could not load payout history", "status", "amount", "requested_at");
+                if (!isFinishing()) showRows(R.id.list_payouts, null, "Could not load payout history", "status", "amount", "requested_at", true);
             }
         });
     }
 
-    private void showRows(int containerId, Object rows, String empty, String titleKey, String amountKey, String dateKey) {
+    private void showRows(int containerId, Object rows, String empty, String titleKey, String amountKey, String dateKey, boolean clear) {
         LinearLayout container = findViewById(containerId);
-        container.removeAllViews();
+        if (clear) container.removeAllViews();
         if (!(rows instanceof List) || ((List<?>) rows).isEmpty()) {
+            if (empty.isEmpty()) return;
             TextView label = new TextView(this);
             label.setText(empty);
             label.setTextColor(getColor(R.color.text_muted));

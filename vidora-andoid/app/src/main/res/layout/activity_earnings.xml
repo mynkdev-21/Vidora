@@ -71,6 +71,10 @@
                 android:text="Recent earnings" />
             <LinearLayout android:id="@+id/list_earnings" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView android:id="@+id/btn_more_earnings" style="@style/Vidora.Control.Secondary"
+                android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
+                android:layout_marginTop="@dimen/space_3" android:text="Load more earnings"
+                android:visibility="gone" />
             <TextView style="@style/Vidora.Text.Section" android:layout_width="match_parent"
                 android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_6"
                 android:text="Payout history" />
