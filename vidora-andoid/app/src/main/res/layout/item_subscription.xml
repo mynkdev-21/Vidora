@@ -6,7 +6,9 @@
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingHorizontal="16dp"
-    android:paddingVertical="12dp">
+    android:paddingVertical="12dp"
+    android:layout_marginBottom="@dimen/space_2"
+    android:background="@drawable/bg_settings_card">
 
     <!-- Avatar -->
     <FrameLayout

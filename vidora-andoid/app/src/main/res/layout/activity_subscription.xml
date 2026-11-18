@@ -17,12 +17,12 @@
         android:paddingTop="16dp"
         android:paddingBottom="14dp">
 
-        <ImageView
+        <ImageView style="@style/Vidora.Control.Icon"
             android:id="@+id/btn_back"
-            android:layout_width="38dp"
-            android:layout_height="38dp"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_arrow_back"
-            android:padding="8dp"
+            android:padding="@dimen/space_3"
             android:background="@drawable/bg_icon_button"
             android:contentDescription="Back" />
     </LinearLayout>
@@ -90,11 +90,11 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="Monthly" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="3-day free trial" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
+                            android:text="Offers shown at checkout" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="₹199/mo" android:textSize="18sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                    <TextView android:id="@+id/tv_monthly_price" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Loading…" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -122,11 +122,11 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="3 Months" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="5-day free trial · Save 17%" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
+                            android:text="Offers shown at checkout" android:textSize="12sp" android:textColor="@color/purple_light" android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="₹499" android:textSize="18sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
+                    <TextView android:id="@+id/tv_quarterly_price" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Loading…" android:textSize="16sp" android:textColor="@color/text_primary" android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -154,11 +154,11 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                             android:text="Yearly" android:textSize="16sp" android:textColor="@color/white" android:fontFamily="sans-serif-medium" />
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                            android:text="7-day free trial · Save 37%" android:textSize="12sp" android:textColor="#CCFFFFFF" android:layout_marginTop="2dp" />
+                            android:text="Offers shown at checkout" android:textSize="12sp" android:textColor="#CCFFFFFF" android:layout_marginTop="2dp" />
                     </LinearLayout>
 
-                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                        android:text="₹1499/yr" android:textSize="18sp" android:textColor="@color/white" android:fontFamily="sans-serif-medium" />
+                    <TextView android:id="@+id/tv_yearly_price" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="Loading…" android:textSize="16sp" android:textColor="@color/white" android:fontFamily="sans-serif-medium" />
                 </LinearLayout>
             </LinearLayout>
 

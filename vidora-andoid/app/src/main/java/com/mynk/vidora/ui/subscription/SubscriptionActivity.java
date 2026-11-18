@@ -22,6 +22,11 @@ public class SubscriptionActivity extends AppCompatActivity {
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
         TextView tvStatus = findViewById(R.id.tv_premium_status);
+        SubscriptionManager.getInstance().loadPrices(this, prices -> {
+            ((TextView) findViewById(R.id.tv_monthly_price)).setText(prices.getOrDefault(SubscriptionManager.PLAN_MONTHLY, "See in Google Play"));
+            ((TextView) findViewById(R.id.tv_quarterly_price)).setText(prices.getOrDefault(SubscriptionManager.PLAN_QUARTERLY, "See in Google Play"));
+            ((TextView) findViewById(R.id.tv_yearly_price)).setText(prices.getOrDefault(SubscriptionManager.PLAN_YEARLY, "See in Google Play"));
+        });
 
         if (SubscriptionManager.getInstance().isPremium()) {
             tvStatus.setVisibility(View.VISIBLE);

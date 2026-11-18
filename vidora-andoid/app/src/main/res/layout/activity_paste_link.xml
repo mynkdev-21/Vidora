@@ -32,8 +32,9 @@
 
         <ImageView
             android:id="@+id/btn_settings"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_person"
             android:padding="8dp"
             android:background="@drawable/bg_icon_button_purple"
@@ -71,7 +72,7 @@
         <EditText
             android:id="@+id/et_link"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/touch_target"
             android:layout_weight="1"
             android:hint="Enter link here …"
             android:textColorHint="@color/text_muted"
@@ -84,8 +85,9 @@
 
         <ImageView
             android:id="@+id/btn_play"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_search"
             android:tint="@color/purple_light"
             android:contentDescription="Go" />

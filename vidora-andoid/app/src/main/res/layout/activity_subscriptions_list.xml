@@ -17,12 +17,12 @@
         android:paddingTop="14dp"
         android:paddingBottom="12dp">
 
-        <ImageView
+        <ImageView style="@style/Vidora.Control.Icon"
             android:id="@+id/btn_back"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
             android:src="@drawable/ic_arrow_back"
-            android:padding="6dp"
+            android:padding="@dimen/space_3"
             android:background="@drawable/bg_icon_button"
             android:contentDescription="Back" />
 

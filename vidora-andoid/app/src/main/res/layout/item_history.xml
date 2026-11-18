@@ -5,8 +5,9 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:paddingVertical="14dp"
-    android:paddingHorizontal="4dp">
+    android:padding="@dimen/space_3"
+    android:layout_marginBottom="@dimen/space_2"
+    android:background="@drawable/bg_settings_card">
 
     <!-- File icon -->
     <FrameLayout

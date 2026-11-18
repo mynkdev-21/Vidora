@@ -11,6 +11,8 @@ import com.android.billingclient.api.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Google Play Billing subscription manager.
@@ -45,6 +47,37 @@ public class SubscriptionManager implements PurchasesUpdatedListener {
     public interface SubscriptionCallback {
         void onPurchaseSuccess();
         void onPurchaseFailed(String error);
+    }
+
+    public interface PricesCallback {
+        void onPrices(Map<String, String> prices);
+    }
+
+    /** Display prices from Play Billing rather than assuming a store offer or currency. */
+    public void loadPrices(Activity activity, PricesCallback callback) {
+        if (billingClient == null || !billingClient.isReady()) {
+            activity.runOnUiThread(() -> callback.onPrices(Map.of()));
+            return;
+        }
+        List<QueryProductDetailsParams.Product> products = new ArrayList<>();
+        for (String id : new String[]{PLAN_MONTHLY, PLAN_QUARTERLY, PLAN_YEARLY}) {
+            products.add(QueryProductDetailsParams.Product.newBuilder()
+                .setProductId(id).setProductType(BillingClient.ProductType.SUBS).build());
+        }
+        billingClient.queryProductDetailsAsync(QueryProductDetailsParams.newBuilder().setProductList(products).build(),
+            (result, details) -> {
+                Map<String, String> prices = new HashMap<>();
+                if (result.getResponseCode() == BillingClient.BillingResponseCode.OK) {
+                    for (ProductDetails product : details) {
+                        List<ProductDetails.SubscriptionOfferDetails> offers = product.getSubscriptionOfferDetails();
+                        if (offers == null || offers.isEmpty()) continue;
+                        List<ProductDetails.PricingPhase> phases = offers.get(0).getPricingPhases().getPricingPhaseList();
+                        if (!phases.isEmpty()) prices.put(product.getProductId(),
+                            phases.get(phases.size() - 1).getFormattedPrice());
+                    }
+                }
+                activity.runOnUiThread(() -> callback.onPrices(prices));
+            });
     }
 
     private SubscriptionManager() {}
