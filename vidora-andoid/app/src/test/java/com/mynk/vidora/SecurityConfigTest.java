@@ -45,9 +45,12 @@ public class SecurityConfigTest {
         String legacy = read("src/main/res/xml/backup_rules.xml");
         String modern = read("src/main/res/xml/data_extraction_rules.xml");
         String exclude = "<exclude domain=\"sharedpref\" path=\"" + Constants.PREFS_NAME + ".xml\" />";
+        String secureExclude = "<exclude domain=\"sharedpref\" path=\"vidora_secure_tokens.xml\" />";
         assertTrue(legacy.contains(exclude));
+        assertTrue(legacy.contains(secureExclude));
         // Both cloud backup and device transfer.
         assertEquals(2, modern.split(Pattern.quote(exclude), -1).length - 1);
+        assertEquals(2, modern.split(Pattern.quote(secureExclude), -1).length - 1);
     }
 
     @Test
