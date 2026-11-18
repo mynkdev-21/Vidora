@@ -3,6 +3,9 @@ package com.mynk.vidora.utils;
 import android.app.Activity;
 import android.content.Intent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.mynk.vidora.R;
 import com.mynk.vidora.ui.home.HomeActivity;
@@ -59,5 +62,25 @@ public final class NavHelper {
                 navigate(activity, ProfileActivity.class, true);
             }
         });
+
+        View[] tabs = {navHome, navSearch, navAdd, navSaved, navProfile};
+        int selected = activity instanceof HomeActivity ? 0 : activity instanceof FeedActivity ? 1
+            : activity instanceof UploadActivity ? 2 : activity instanceof SavedActivity ? 3
+            : activity instanceof ProfileActivity ? 4 : -1;
+        for (int i = 0; i < tabs.length; i++) {
+            View tab = tabs[i];
+            if (tab == null) continue;
+            tab.setSelected(i == selected);
+            if (i == selected && i != 2) tab.setBackgroundResource(R.drawable.bg_icon_button);
+            if (tab instanceof ViewGroup) {
+                ViewGroup group = (ViewGroup) tab;
+                for (int j = 0; j < group.getChildCount(); j++) {
+                    View child = group.getChildAt(j);
+                    int color = activity.getColor(i == selected ? R.color.purple_light : R.color.text_dim);
+                    if (child instanceof TextView) ((TextView) child).setTextColor(color);
+                    if (child instanceof ImageView) ((ImageView) child).setImageTintList(android.content.res.ColorStateList.valueOf(color));
+                }
+            }
+        }
     }
 }

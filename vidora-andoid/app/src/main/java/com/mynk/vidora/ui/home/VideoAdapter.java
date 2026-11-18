@@ -99,11 +99,13 @@ public class VideoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
             VideoViewHolder vh = (VideoViewHolder) holder;
 
             vh.title.setText(video.originalName != null ? video.originalName : "Untitled");
+            vh.creator.setText(video.creatorName != null ? video.creatorName : "Vidora creator");
             vh.views.setText(formatViews(video.viewCount) + " views");
 
             // Load thumbnail
             if (video.thumbnailUrl != null && !video.thumbnailUrl.isEmpty()) {
-                String fullUrl = Constants.BASE_URL + video.thumbnailUrl.replaceFirst("^/", "");
+                String fullUrl = video.thumbnailUrl.startsWith("http") ? video.thumbnailUrl
+                    : com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + video.thumbnailUrl.replaceFirst("^/", "");
                 vh.thumbnail.setVisibility(View.VISIBLE);
                 vh.thumbPlaceholder.setVisibility(View.GONE);
                 Glide.with(vh.itemView.getContext())
@@ -138,13 +140,14 @@ public class VideoAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> 
 
     // ── ViewHolders ───────────────────────────────────────────────────────────
     static class VideoViewHolder extends RecyclerView.ViewHolder {
-        TextView title, views;
+        TextView title, creator, views;
         ImageView thumbnail;
         View thumbPlaceholder;
 
         VideoViewHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.tv_video_title);
+            creator = itemView.findViewById(R.id.tv_video_creator);
             views = itemView.findViewById(R.id.tv_video_views);
             thumbnail = itemView.findViewById(R.id.iv_thumbnail);
             thumbPlaceholder = itemView.findViewById(R.id.thumb_placeholder);

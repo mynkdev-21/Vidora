@@ -7,7 +7,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,6 +21,7 @@ import com.google.android.gms.ads.AdView;
 import com.mynk.vidora.R;
 import com.mynk.vidora.ads.AdsConfig;
 import com.mynk.vidora.api.ApiClient;
+import com.mynk.vidora.model.FileListResponse;
 import com.mynk.vidora.ui.auth.LoginActivity;
 import com.mynk.vidora.ui.filedetail.FileDetailActivity;
 import com.mynk.vidora.ui.notifications.NotificationsActivity;
@@ -29,10 +32,21 @@ import com.mynk.vidora.utils.NavHelper;
 import com.mynk.vidora.utils.PrefsManager;
 import com.mynk.vidora.ui.paste.HistoryAdapter;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class HomeActivity extends AppCompatActivity {
 
     private EditText etLink;
     private HistoryAdapter historyAdapter;
+    private final List<FileListResponse.FileItem> trending = new ArrayList<>();
+    private final List<FileListResponse.FileItem> visibleTrending = new ArrayList<>();
+    private VideoAdapter trendingAdapter;
+    private Call<FileListResponse> trendingCall;
     private HistoryManager historyManager;
 
     private final BroadcastReceiver bannedReceiver = new BroadcastReceiver() {
@@ -83,6 +97,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (trendingCall != null) trendingCall.cancel();
         try { unregisterReceiver(bannedReceiver); } catch (Exception ignored) {}
     }
 
@@ -102,6 +117,21 @@ public class HomeActivity extends AppCompatActivity {
             startActivity(intent);
         });
         recyclerHistory.setAdapter(historyAdapter);
+
+        RecyclerView recyclerTrending = findViewById(R.id.recycler_trending);
+        recyclerTrending.setLayoutManager(new LinearLayoutManager(this));
+        trendingAdapter = new VideoAdapter(visibleTrending, file -> {
+            Intent intent = new Intent(this, FileDetailActivity.class);
+            intent.putExtra("token", file.id);
+            startActivity(intent);
+        });
+        recyclerTrending.setAdapter(trendingAdapter);
+        findViewById(R.id.chip_all).setOnClickListener(v -> filterTrending(""));
+        findViewById(R.id.chip_videos).setOnClickListener(v -> filterTrending("video/"));
+        findViewById(R.id.chip_images).setOnClickListener(v -> filterTrending("image/"));
+        findViewById(R.id.btn_explore_all).setOnClickListener(v ->
+            startActivity(new Intent(this, com.mynk.vidora.ui.search.SearchActivity.class)));
+        loadTrending();
 
         // Search/Go button
         findViewById(R.id.btn_play).setOnClickListener(v -> openLink());
@@ -132,6 +162,47 @@ public class HomeActivity extends AppCompatActivity {
 
         // Bottom nav
         NavHelper.setup(this);
+    }
+
+    private void loadTrending() {
+        TextView state = findViewById(R.id.tv_trending_state);
+        state.setText("Loading files…");
+        trendingCall = ApiClient.getService().getTrending(8);
+        trendingCall.enqueue(new Callback<FileListResponse>() {
+            @Override public void onResponse(Call<FileListResponse> call, Response<FileListResponse> response) {
+                if (call != trendingCall || isFinishing()) return;
+                trending.clear();
+                if (response.isSuccessful() && response.body() != null && response.body().data != null
+                        && response.body().data.files != null) trending.addAll(response.body().data.files);
+                filterTrending("");
+                if (!response.isSuccessful()) state.setText("Could not load trending files. Tap to retry.");
+            }
+            @Override public void onFailure(Call<FileListResponse> call, Throwable error) {
+                if (call != trendingCall || isFinishing()) return;
+                state.setVisibility(View.VISIBLE);
+                state.setText("Network error. Tap to retry.");
+            }
+        });
+        state.setOnClickListener(v -> loadTrending());
+    }
+
+    private void filterTrending(String mimePrefix) {
+        visibleTrending.clear();
+        for (FileListResponse.FileItem item : trending) {
+            if (mimePrefix.isEmpty() || (item.mimeType != null && item.mimeType.startsWith(mimePrefix)))
+                visibleTrending.add(item);
+        }
+        trendingAdapter.notifyDataSetChanged();
+        TextView state = findViewById(R.id.tv_trending_state);
+        state.setVisibility(visibleTrending.isEmpty() ? View.VISIBLE : View.GONE);
+        if (visibleTrending.isEmpty()) state.setText("No files in this category yet.");
+        int[] chips = {R.id.chip_all, R.id.chip_videos, R.id.chip_images};
+        int selected = mimePrefix.isEmpty() ? 0 : mimePrefix.equals("video/") ? 1 : 2;
+        for (int i = 0; i < chips.length; i++) {
+            TextView chip = findViewById(chips[i]);
+            chip.setBackgroundResource(i == selected ? R.drawable.bg_btn_outline_purple : R.drawable.bg_icon_button);
+            chip.setTextColor(getColor(i == selected ? R.color.purple_light : R.color.text_secondary));
+        }
     }
 
     private void checkConnectivity() {

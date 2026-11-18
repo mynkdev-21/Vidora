@@ -2,274 +2,185 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:fitsSystemWindows="true"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@color/bg_primary">
 
-    <!-- Top bar -->
-    <LinearLayout
-        android:id="@+id/top_bar"
-        android:fitsSystemWindows="true"
-    android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="20dp"
+    <LinearLayout android:id="@+id/top_bar"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/content_gutter"
+        android:paddingTop="@dimen/space_4" android:paddingBottom="@dimen/space_3"
         app:layout_constraintTop_toTopOf="parent">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="160dp"
-                android:layout_height="38dp"
-                android:src="@drawable/logo_wordmark"
-                android:scaleType="fitStart"
-                android:contentDescription="Vidora" />
-        </LinearLayout>
-
-        <ImageView
-            android:id="@+id/btn_search_top"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:src="@drawable/ic_search"
-            android:padding="9dp"
-            android:background="@drawable/bg_icon_button"
-            android:layout_marginEnd="10dp"
-            android:visibility="gone"
-            android:contentDescription="Search" />
-
-        <ImageView
-            android:id="@+id/btn_notifications_top"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:src="@drawable/ic_notifications"
-            android:padding="9dp"
-            android:background="@drawable/bg_icon_button"
-            android:layout_marginEnd="10dp"
+        <ImageView android:layout_width="0dp" android:layout_height="40dp"
+            android:layout_weight="1" android:src="@drawable/logo_wordmark"
+            android:scaleType="fitStart" android:contentDescription="Vidora" />
+        <ImageView android:id="@+id/btn_search_top" style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
+            android:src="@drawable/ic_search" android:layout_marginEnd="@dimen/space_2"
+            android:contentDescription="Search files" />
+        <ImageView android:id="@+id/btn_notifications_top" style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
+            android:src="@drawable/ic_notifications" android:layout_marginEnd="@dimen/space_2"
             android:contentDescription="Notifications" />
-
-        <ImageView
-            android:id="@+id/btn_profile_top"
-            android:layout_width="42dp"
-            android:layout_height="42dp"
-            android:src="@drawable/ic_person"
-            android:padding="9dp"
-            android:background="@drawable/bg_icon_button_purple"
-            android:contentDescription="Profile" />
+        <ImageView android:id="@+id/btn_profile_top" style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
+            android:src="@drawable/ic_person" android:contentDescription="Profile" />
     </LinearLayout>
 
-    <!-- Email verification banner -->
-    <LinearLayout
-        android:id="@+id/banner_verify"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
+    <LinearLayout android:id="@+id/banner_verify"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
         android:background="@drawable/bg_verify_banner"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="8dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/top_bar">
-
-        <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:src="@drawable/ic_mail_outline"
-            android:tint="#fbbf24"
-            android:layout_marginEnd="10dp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+        android:padding="@dimen/space_3" android:layout_marginHorizontal="@dimen/content_gutter"
+        android:visibility="gone" app:layout_constraintTop_toBottomOf="@id/top_bar">
+        <ImageView android:layout_width="20dp" android:layout_height="20dp"
+            android:src="@drawable/ic_mail_outline" android:tint="@color/purple_light"
+            android:contentDescription="Email verification" />
+        <TextView style="@style/Vidora.Text.Body" android:layout_width="0dp"
+            android:layout_height="wrap_content" android:layout_weight="1"
             android:text="Verify your email to unlock all features"
-            android:textSize="12sp"
-            android:textColor="#fbbf24" />
-
-        <TextView
-            android:id="@+id/btn_verify_now"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Verify"
-            android:textSize="11sp"
-            android:textColor="#fbbf24"
-            android:fontFamily="sans-serif-medium"
-            android:background="@drawable/bg_verify_btn"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="6dp" />
+            android:layout_marginStart="@dimen/space_2" />
+        <TextView android:id="@+id/btn_verify_now" style="@style/Vidora.Text.Section"
+            android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+            android:gravity="center" android:paddingHorizontal="@dimen/space_3"
+            android:text="Verify" android:textColor="@color/purple_light" />
     </LinearLayout>
 
-    <!-- Link input card -->
-    <LinearLayout
-        android:id="@+id/card_link_input"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:background="@drawable/bg_input"
-        android:layout_marginHorizontal="20dp"
-        android:layout_marginTop="4dp"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="14dp"
-        app:layout_constraintTop_toBottomOf="@id/banner_verify">
+    <androidx.core.widget.NestedScrollView android:id="@+id/home_scroll"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:fillViewport="true" android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/banner_verify"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingBottom="@dimen/space_6">
 
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@drawable/ic_link"
-            android:tint="@color/text_muted"
-            android:contentDescription="Link" />
+            <TextView style="@style/Vidora.Text.Display"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/content_gutter"
+                android:layout_marginTop="@dimen/space_4" android:text="Find your next watch" />
+            <TextView style="@style/Vidora.Text.Body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/content_gutter"
+                android:layout_marginTop="@dimen/space_1"
+                android:text="Explore real uploads or open a shared link." />
 
-        <EditText
-            android:id="@+id/et_link"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="Enter link here …"
-            android:textColorHint="@color/text_muted"
-            android:textColor="@color/text_primary"
-            android:textSize="14sp"
-            android:background="@null"
-            android:inputType="textUri"
-            android:singleLine="true"
-            android:layout_marginStart="12dp" />
+            <LinearLayout android:id="@+id/card_link_input"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:background="@drawable/bg_input"
+                android:layout_marginHorizontal="@dimen/content_gutter"
+                android:layout_marginTop="@dimen/space_5"
+                android:paddingStart="@dimen/space_4" android:paddingEnd="@dimen/space_2">
+                <ImageView android:layout_width="22dp" android:layout_height="22dp"
+                    android:src="@drawable/ic_link" android:tint="@color/text_muted"
+                    android:contentDescription="Shared link" />
+                <EditText android:id="@+id/et_link"
+                    android:layout_width="0dp" android:layout_height="@dimen/touch_target"
+                    android:layout_weight="1" android:layout_marginStart="@dimen/space_3"
+                    android:hint="Paste a Vidora link" android:singleLine="true"
+                    android:inputType="textUri" android:background="@null"
+                    android:textColor="@color/text_primary" android:textColorHint="@color/text_muted"
+                    android:textSize="14sp" />
+                <ImageView android:id="@+id/btn_play" style="@style/Vidora.Control.Icon"
+                    android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
+                    android:src="@drawable/ic_forward" android:tint="@color/purple_light"
+                    android:contentDescription="Open shared link" />
+            </LinearLayout>
 
-        <ImageView
-            android:id="@+id/btn_play"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:src="@drawable/ic_search"
-            android:tint="@color/purple_light"
-            android:contentDescription="Go" />
+            <FrameLayout android:id="@+id/ad_banner_container"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2" />
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:layout_marginHorizontal="@dimen/content_gutter"
+                android:layout_marginTop="@dimen/space_5">
+                <TextView style="@style/Vidora.Text.Title" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Trending now" />
+                <TextView android:id="@+id/btn_explore_all" style="@style/Vidora.Text.Body"
+                    android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+                    android:gravity="center" android:paddingHorizontal="@dimen/space_2"
+                    android:text="Explore all" android:textColor="@color/purple_light" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginHorizontal="@dimen/content_gutter"
+                android:layout_marginBottom="@dimen/space_3">
+                <TextView android:id="@+id/chip_all" style="@style/Vidora.Text.Body"
+                    android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+                    android:gravity="center" android:paddingHorizontal="@dimen/space_3"
+                    android:text="All" android:background="@drawable/bg_btn_outline_purple" />
+                <TextView android:id="@+id/chip_videos" style="@style/Vidora.Text.Body"
+                    android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+                    android:gravity="center" android:paddingHorizontal="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_2" android:text="Videos"
+                    android:background="@drawable/bg_icon_button" />
+                <TextView android:id="@+id/chip_images" style="@style/Vidora.Text.Body"
+                    android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+                    android:gravity="center" android:paddingHorizontal="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_2" android:text="Images"
+                    android:background="@drawable/bg_icon_button" />
+            </LinearLayout>
+            <TextView android:id="@+id/tv_trending_state" style="@style/Vidora.Text.Body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/content_gutter"
+                android:paddingVertical="@dimen/space_3" android:text="Loading files…" />
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_trending"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/content_gutter" android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+
+            <LinearLayout android:id="@+id/layout_history_header"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical"
+                android:paddingHorizontal="@dimen/content_gutter"
+                android:layout_marginTop="@dimen/space_5">
+                <TextView style="@style/Vidora.Text.Title" android:layout_width="0dp"
+                    android:layout_height="wrap_content" android:layout_weight="1"
+                    android:text="Recently opened" />
+                <TextView android:id="@+id/btn_clear_history" style="@style/Vidora.Text.Body"
+                    android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+                    android:gravity="center" android:paddingHorizontal="@dimen/space_2"
+                    android:text="Clear" android:textColor="@color/purple_light" />
+            </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/recycler_history"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/content_gutter" android:clipToPadding="false"
+                android:nestedScrollingEnabled="false" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout android:id="@+id/layout_offline"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:gravity="center"
+        android:background="@color/bg_card" android:padding="@dimen/space_6"
+        android:visibility="gone" app:layout_constraintTop_toBottomOf="@id/top_bar"
+        app:layout_constraintBottom_toTopOf="@id/bottom_nav">
+        <ImageView android:layout_width="48dp" android:layout_height="48dp"
+            android:src="@drawable/ic_wifi_off" android:tint="@color/text_muted"
+            android:contentDescription="Offline" />
+        <TextView style="@style/Vidora.Text.Title" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_3"
+            android:text="You're offline" />
+        <TextView style="@style/Vidora.Text.Body" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_1"
+            android:text="Downloads are still available." />
+        <TextView android:id="@+id/btn_view_downloads" style="@style/Vidora.Control.Primary"
+            android:layout_width="wrap_content" android:layout_height="@dimen/touch_target"
+            android:layout_marginTop="@dimen/space_4" android:paddingHorizontal="@dimen/space_5"
+            android:text="View downloads" />
     </LinearLayout>
 
-    <!-- Banner Ad container (AdView created programmatically) -->
-    <FrameLayout
-        android:id="@+id/ad_banner_container"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/card_link_input" />
-
-    <!-- Recent History header -->
-    <LinearLayout
-        android:id="@+id/layout_history_header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="20dp"
-        android:paddingTop="20dp"
-        android:paddingBottom="10dp"
-        app:layout_constraintTop_toBottomOf="@id/ad_banner_container">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Recent History"
-            android:textSize="16sp"
-            android:textColor="@color/text_primary"
-            android:fontFamily="sans-serif-medium" />
-
-        <TextView
-            android:id="@+id/btn_clear_history"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Clear All"
-            android:textSize="13sp"
-            android:textColor="@color/purple_light" />
-    </LinearLayout>
-
-    <!-- Recent history list -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_history"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:paddingHorizontal="20dp"
-        android:clipToPadding="false"
-        app:layout_constraintTop_toBottomOf="@id/layout_history_header"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_paste" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_marginEnd="@dimen/content_gutter"
+        android:layout_marginBottom="@dimen/space_4" android:src="@drawable/ic_clipboard"
+        android:contentDescription="Paste from clipboard"
+        app:backgroundTint="@color/purple_primary" app:tint="@color/white"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toTopOf="@id/bottom_nav" />
 
-    <!-- FAB (paste from clipboard) -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_paste"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="92dp"
-        android:src="@drawable/ic_clipboard"
-        android:contentDescription="Paste"
-        app:backgroundTint="@color/purple_primary"
-        app:tint="@color/white"
-        app:fabSize="normal"
-        app:layout_constraintEnd_toEndOf="parent"
+    <include layout="@layout/layout_bottom_nav" android:id="@+id/bottom_nav"
+        android:layout_width="match_parent" android:layout_height="76dp"
         app:layout_constraintBottom_toBottomOf="parent" />
-
-    <!-- Offline banner -->
-    <LinearLayout
-        android:id="@+id/layout_offline"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:paddingVertical="40dp"
-        android:paddingHorizontal="24dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/card_link_input"
-        app:layout_constraintBottom_toTopOf="@id/bottom_nav">
-
-        <ImageView
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_wifi_off"
-            android:tint="@color/text_muted"
-            android:layout_marginBottom="14dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="You're offline"
-            android:textSize="18sp"
-            android:textColor="@color/text_primary"
-            android:fontFamily="sans-serif-medium"
-            android:layout_marginBottom="6dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Check your internet connection"
-            android:textSize="13sp"
-            android:textColor="@color/text_muted"
-            android:layout_marginBottom="20dp" />
-
-        <TextView
-            android:id="@+id/btn_view_downloads"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="View Downloads"
-            android:textSize="14sp"
-            android:textColor="@color/white"
-            android:fontFamily="sans-serif-medium"
-            android:background="@drawable/bg_btn_purple"
-            android:paddingHorizontal="28dp"
-            android:paddingVertical="14dp" />
-    </LinearLayout>
-
-    <!-- Bottom Navigation -->
-    <include layout="@layout/layout_bottom_nav"
-        android:id="@+id/bottom_nav"
-        android:layout_width="match_parent"
-        android:layout_height="76dp"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

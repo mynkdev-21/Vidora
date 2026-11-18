@@ -14,6 +14,7 @@
 
     <LinearLayout
         android:id="@+id/nav_home"
+        android:contentDescription="Home"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -27,6 +28,7 @@
 
     <LinearLayout
         android:id="@+id/nav_search"
+        android:contentDescription="Subscriptions feed"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -40,6 +42,7 @@
 
     <FrameLayout
         android:id="@+id/nav_add"
+        android:contentDescription="Upload file"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1">
@@ -61,6 +64,7 @@
 
     <LinearLayout
         android:id="@+id/nav_saved"
+        android:contentDescription="Saved files"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -74,6 +78,7 @@
 
     <LinearLayout
         android:id="@+id/nav_profile"
+        android:contentDescription="Profile"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
