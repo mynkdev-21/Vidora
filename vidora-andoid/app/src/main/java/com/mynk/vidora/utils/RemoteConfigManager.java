@@ -47,6 +47,9 @@ public class RemoteConfigManager {
     }
 
     public static String getBaseUrl() {
+        // A developer-selected local endpoint must not be replaced by a cached
+        // production Remote Config value from another network or environment.
+        if (com.mynk.vidora.BuildConfig.DEBUG) return Constants.BASE_URL;
         if (remoteConfig == null) return Constants.BASE_URL;
         String url = remoteConfig.getString("base_url");
         if (url.isEmpty()) return Constants.BASE_URL;
