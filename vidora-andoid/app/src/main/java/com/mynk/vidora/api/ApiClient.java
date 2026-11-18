@@ -4,6 +4,9 @@ import android.content.Context;
 import android.content.Intent;
 
 import com.mynk.vidora.utils.Constants;
+import com.mynk.vidora.utils.PrefsManager;
+
+import org.json.JSONObject;
 
 import java.io.File;
 
@@ -12,6 +15,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
@@ -26,8 +31,9 @@ import java.util.concurrent.TimeUnit;
 public class ApiClient {
 
     private static Retrofit retrofit = null;
-    private static String accessToken = null;
+    private static volatile String accessToken = null;
     private static Context appContext = null;
+    private static final Object refreshLock = new Object();
 
     public static final String ACTION_ACCOUNT_BANNED = "com.mynk.vidora.ACCOUNT_BANNED";
 
@@ -91,6 +97,23 @@ public class ApiClient {
                     return response;
                 })
                 .addInterceptor(logging)
+                .authenticator((route, response) -> {
+                    String oldHeader = response.request().header("Authorization");
+                    if (appContext == null || oldHeader == null || responseCount(response) > 1
+                            || response.request().url().encodedPath().startsWith("/api/auth/")) return null;
+                    synchronized (refreshLock) {
+                        PrefsManager prefs = new PrefsManager(appContext);
+                        String current = prefs.getAccessToken();
+                        if (current == null) return null;
+                        String bearer = "Bearer " + current;
+                        if (oldHeader.equals(bearer)) {
+                            String rotated = refreshMobileTokens(prefs);
+                            if (rotated == null) return null;
+                            bearer = "Bearer " + rotated;
+                        }
+                        return response.request().newBuilder().header("Authorization", bearer).build();
+                    }
+                })
                 .build();
 
             retrofit = new Retrofit.Builder()
@@ -104,5 +127,43 @@ public class ApiClient {
 
     public static ApiService getService() {
         return getClient().create(ApiService.class);
+    }
+
+    private static int responseCount(Response response) {
+        int count = 1;
+        while ((response = response.priorResponse()) != null) count++;
+        return count;
+    }
+
+    private static String refreshMobileTokens(PrefsManager prefs) {
+        String refresh = prefs.getRefreshToken();
+        if (refresh == null) return null;
+        try {
+            JSONObject body = new JSONObject().put("refreshToken", refresh);
+            Request request = new Request.Builder()
+                .url(com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + "api/auth/refresh")
+                .header("X-API-Key", Constants.API_KEY)
+                .post(RequestBody.create(body.toString(), MediaType.parse("application/json")))
+                .build();
+            // A separate client prevents the refresh call from recursively invoking this authenticator.
+            try (Response result = new OkHttpClient.Builder()
+                    .connectTimeout(15, TimeUnit.SECONDS).readTimeout(15, TimeUnit.SECONDS)
+                    .build().newCall(request).execute()) {
+                if (result.code() == 401 || result.code() == 403) {
+                    prefs.clear();
+                    return null;
+                }
+                if (!result.isSuccessful() || result.body() == null) return null;
+                JSONObject data = new JSONObject(result.body().string()).getJSONObject("data");
+                String access = data.getString("accessToken");
+                String nextRefresh = data.getString("refreshToken");
+                if (!prefs.saveTokens(access, nextRefresh)) return null;
+                setAccessToken(access);
+                return access;
+            }
+        } catch (Exception ignored) {
+            // A transient network failure leaves the stored refresh token available for the next request.
+            return null;
+        }
     }
 }
