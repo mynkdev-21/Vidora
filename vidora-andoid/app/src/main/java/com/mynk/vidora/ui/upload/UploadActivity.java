@@ -1,7 +1,6 @@
 package com.mynk.vidora.ui.upload;
 
 import android.content.Intent;
-import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,19 +15,21 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.mynk.vidora.R;
+import com.mynk.vidora.api.ApiClient;
 import com.mynk.vidora.utils.Constants;
 import com.mynk.vidora.utils.FullScreenHelper;
 import com.mynk.vidora.utils.NavHelper;
 import com.mynk.vidora.utils.PrefsManager;
+import com.mynk.vidora.utils.RemoteConfigManager;
 
 import java.io.InputStream;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
-import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.Call;
 import okio.BufferedSink;
 import okio.Okio;
 import okio.Source;
@@ -42,6 +43,8 @@ public class UploadActivity extends AppCompatActivity {
     private String fileName;
     private long fileSize;
     private boolean isUploading = false;
+    private volatile Call uploadCall;
+    private int uploadAttempt;
 
     private final ActivityResultLauncher<Intent> filePicker = registerForActivityResult(
         new ActivityResultContracts.StartActivityForResult(),
@@ -78,6 +81,16 @@ public class UploadActivity extends AppCompatActivity {
         btnUpload.setOnClickListener(v -> startUpload());
         btnCancel.setOnClickListener(v -> resetState());
         findViewById(R.id.btn_upload_another).setOnClickListener(v -> resetState());
+        findViewById(R.id.btn_visit_dashboard).setOnClickListener(v ->
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.WEB_BASE_URL + "dashboard"))));
+        findViewById(R.id.btn_copy_url).setEnabled(false);
+    }
+
+    @Override protected void onDestroy() {
+        uploadAttempt++;
+        Call call = uploadCall;
+        if (call != null) call.cancel();
+        super.onDestroy();
     }
 
     private void openFilePicker() {
@@ -112,27 +125,33 @@ public class UploadActivity extends AppCompatActivity {
     }
 
     private void resetState() {
+        uploadAttempt++;
+        Call call = uploadCall;
+        if (call != null) call.cancel();
+        uploadCall = null;
         layoutSelect.setVisibility(View.VISIBLE);
         layoutUploading.setVisibility(View.GONE);
         layoutSuccess.setVisibility(View.GONE);
         selectedFileUri = null;
         isUploading = false;
+        btnUpload.setText("Upload");
+        btnUpload.setEnabled(true);
     }
 
     private void startUpload() {
         if (selectedFileUri == null || isUploading) return;
+        String token = new PrefsManager(this).getAccessToken();
+        if (token == null) {
+            startActivity(new Intent(this, com.mynk.vidora.ui.auth.LoginActivity.class));
+            return;
+        }
+        final int attempt = ++uploadAttempt;
         isUploading = true;
         btnUpload.setText("Uploading...");
         btnUpload.setEnabled(false);
 
         new Thread(() -> {
             try {
-                PrefsManager prefs = new PrefsManager(this);
-                String token = prefs.getAccessToken();
-
-                InputStream inputStream = getContentResolver().openInputStream(selectedFileUri);
-                if (inputStream == null) throw new Exception("Cannot read file");
-
                 String mimeType = getContentResolver().getType(selectedFileUri);
                 if (mimeType == null) mimeType = "application/octet-stream";
                 final String finalMimeType = mimeType;
@@ -140,23 +159,26 @@ public class UploadActivity extends AppCompatActivity {
                 // Create request body with progress tracking
                 RequestBody fileBody = new RequestBody() {
                     @Override public MediaType contentType() { return MediaType.parse(finalMimeType); }
-                    @Override public long contentLength() { return fileSize; }
+                    @Override public long contentLength() { return fileSize > 0 ? fileSize : -1; }
                     @Override public void writeTo(BufferedSink sink) throws java.io.IOException {
-                        Source source = Okio.source(inputStream);
+                        InputStream inputStream = getContentResolver().openInputStream(selectedFileUri);
+                        if (inputStream == null) throw new java.io.IOException("Cannot read file");
+                        try (Source source = Okio.source(inputStream)) {
                         long totalRead = 0;
                         long read;
                         okio.Buffer buffer = new okio.Buffer();
                         while ((read = source.read(buffer, 8192)) != -1) {
+                            if (attempt != uploadAttempt || Thread.currentThread().isInterrupted()) throw new java.io.IOException("Upload cancelled");
                             sink.write(buffer, read);
                             totalRead += read;
                             long finalTotal = totalRead;
-                            runOnUiThread(() -> {
+                            runOnUiThread(() -> { if (attempt != uploadAttempt) return;
                                 int pct = fileSize > 0 ? (int) (finalTotal * 100 / fileSize) : 0;
                                 progressBar.setProgress(pct);
                                 tvProgress.setText(pct + "%");
                             });
                         }
-                        source.close();
+                        }
                     }
                 };
 
@@ -166,38 +188,28 @@ public class UploadActivity extends AppCompatActivity {
                     .build();
 
                 Request request = new Request.Builder()
-                    .url(Constants.BASE_URL + "api/files/upload")
+                    .url(RemoteConfigManager.getBaseUrl() + "api/files/upload")
                     .addHeader("Authorization", "Bearer " + token)
                     .addHeader("X-API-Key", Constants.API_KEY)
                     .post(body)
                     .build();
 
-                OkHttpClient client = new OkHttpClient.Builder()
-                    .connectTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-                    .writeTimeout(300, java.util.concurrent.TimeUnit.SECONDS)
-                    .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
-                    .build();
-
-                Response response = client.newCall(request).execute();
-
-                runOnUiThread(() -> {
+                Call call = ApiClient.newUploadCall(request);
+                uploadCall = call;
+                try (Response response = call.execute()) {
+                boolean success = response.isSuccessful();
+                String fileId = null;
+                if (success && response.body() != null) {
+                    try { fileId = new org.json.JSONObject(response.body().string())
+                        .getJSONObject("data").getJSONObject("file").getString("id"); }
+                    catch (Exception ignored) { }
+                }
+                final String uploadedFileId = fileId;
+                runOnUiThread(() -> { if (attempt != uploadAttempt) return;
+                    uploadCall = null;
                     isUploading = false;
-                    if (response.isSuccessful()) {
-                        // Parse response to get file ID for share URL
-                        String shareUrl = "";
-                        try {
-                            String resBody = response.body() != null ? response.body().string() : "";
-                            org.json.JSONObject json = new org.json.JSONObject(resBody);
-                            if (json.has("data")) {
-                                org.json.JSONObject data = json.getJSONObject("data");
-                                if (data.has("file")) {
-                                    String fileId = data.getJSONObject("file").getString("id");
-                                    // Generate share token
-                                    generateShareUrl(fileId);
-                                }
-                            }
-                        } catch (Exception ex) {}
-
+                    if (success && uploadedFileId != null) {
+                        generateShareUrl(uploadedFileId);
                         layoutUploading.setVisibility(View.GONE);
                         layoutSuccess.setVisibility(View.VISIBLE);
                     } else {
@@ -206,8 +218,10 @@ public class UploadActivity extends AppCompatActivity {
                         btnUpload.setEnabled(true);
                     }
                 });
+                }
             } catch (Exception e) {
-                runOnUiThread(() -> {
+                runOnUiThread(() -> { if (attempt != uploadAttempt) return;
+                    uploadCall = null;
                     isUploading = false;
                     Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                     btnUpload.setText("Upload");
@@ -222,27 +236,26 @@ public class UploadActivity extends AppCompatActivity {
             try {
                 PrefsManager prefs = new PrefsManager(this);
                 Request req = new Request.Builder()
-                    .url(Constants.BASE_URL + "api/share/" + fileId + "/generate")
+                    .url(RemoteConfigManager.getBaseUrl() + "api/share/" + fileId + "/generate")
                     .addHeader("Authorization", "Bearer " + prefs.getAccessToken())
                     .addHeader("X-API-Key", Constants.API_KEY)
                     .post(RequestBody.create("", MediaType.parse("application/json")))
                     .build();
 
-                OkHttpClient client = new OkHttpClient();
-                Response res = client.newCall(req).execute();
+                try (Response res = ApiClient.getClient().callFactory().newCall(req).execute()) {
                 if (res.isSuccessful() && res.body() != null) {
                     String body = res.body().string();
                     org.json.JSONObject json = new org.json.JSONObject(body);
                     String token = json.getJSONObject("data").getString("token");
                     // Build frontend URL
-                    String frontendUrl = Constants.BASE_URL.replace(":5001", ":8080").replace("/api", "");
+                    String frontendUrl = Constants.WEB_BASE_URL;
                     if (frontendUrl.endsWith("/")) frontendUrl = frontendUrl.substring(0, frontendUrl.length() - 1);
                     final String shareUrl = frontendUrl + "/v/" + token;
-                    final String dashUrl = frontendUrl + "/dashboard";
 
                     runOnUiThread(() -> {
                         TextView tvUrl = findViewById(R.id.tv_share_url);
                         tvUrl.setText(shareUrl);
+                        findViewById(R.id.btn_copy_url).setEnabled(true);
 
                         // Copy button
                         findViewById(R.id.btn_copy_url).setOnClickListener(v -> {
@@ -251,14 +264,13 @@ public class UploadActivity extends AppCompatActivity {
                             Toast.makeText(this, "Link copied!", Toast.LENGTH_SHORT).show();
                         });
 
-                        // Visit Dashboard
-                        findViewById(R.id.btn_visit_dashboard).setOnClickListener(v -> {
-                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(dashUrl)));
-                        });
                     });
+                } else {
+                    runOnUiThread(() -> Toast.makeText(this, "Uploaded, but share link could not be created. Open dashboard to manage the file.", Toast.LENGTH_LONG).show());
+                }
                 }
             } catch (Exception e) {
-                // Silent fail — URL just won't show
+                runOnUiThread(() -> Toast.makeText(this, "Uploaded, but share link could not be created. Open dashboard to manage the file.", Toast.LENGTH_LONG).show());
             }
         }).start();
     }

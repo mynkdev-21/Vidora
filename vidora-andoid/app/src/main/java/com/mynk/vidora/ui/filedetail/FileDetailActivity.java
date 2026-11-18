@@ -91,9 +91,7 @@ public class FileDetailActivity extends AppCompatActivity {
 
         findViewById(R.id.btn_share).setOnClickListener(v -> {
             // Build web share URL: http://IP:8080/v/TOKEN
-            String frontendUrl = Constants.BASE_URL
-                .replaceAll(":5001/?$", ":8080")
-                .replaceAll("/$", "");
+            String frontendUrl = Constants.WEB_BASE_URL.replaceAll("/$", "");
             String shareUrl = frontendUrl + "/v/" + token;
 
             Intent shareIntent = new Intent(Intent.ACTION_SEND);
@@ -263,7 +261,7 @@ public class FileDetailActivity extends AppCompatActivity {
                     updateBookmarkState();
 
                     if (file.thumbnail != null && !file.thumbnail.isEmpty()) {
-                        String thumbUrl = Constants.BASE_URL + file.thumbnail.replaceFirst("^/", "");
+                        String thumbUrl = com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + file.thumbnail.replaceFirst("^/", "");
                         ivThumbnail.setVisibility(View.VISIBLE);
                         ivFileIcon.setVisibility(View.GONE);
                         Glide.with(FileDetailActivity.this)

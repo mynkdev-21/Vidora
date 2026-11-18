@@ -13,6 +13,7 @@ import java.io.File;
 import okhttp3.Cache;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.Call;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okhttp3.MediaType;
@@ -71,11 +72,10 @@ public class ApiClient {
             OkHttpClient client = clientBuilder
                 .addInterceptor(chain -> {
                     Request.Builder builder = chain.request().newBuilder()
-                        .addHeader("X-API-Key", Constants.API_KEY)
-                        .addHeader("Content-Type", "application/json");
+                        .header("X-API-Key", Constants.API_KEY);
 
                     if (accessToken != null && !accessToken.isEmpty()) {
-                        builder.addHeader("Authorization", "Bearer " + accessToken);
+                        builder.header("Authorization", "Bearer " + accessToken);
                     }
 
                     return chain.proceed(builder.build());
@@ -127,6 +127,12 @@ public class ApiClient {
 
     public static ApiService getService() {
         return getClient().create(ApiService.class);
+    }
+
+    /** Uploads share the normal authentication/refresh interceptors but allow a slow body write. */
+    public static Call newUploadCall(Request request) {
+        OkHttpClient client = (OkHttpClient) getClient().callFactory();
+        return client.newBuilder().writeTimeout(300, TimeUnit.SECONDS).newCall(request);
     }
 
     private static int responseCount(Response response) {

@@ -74,7 +74,7 @@ public class ImageViewerActivity extends AppCompatActivity {
 
     private void loadRemoteImage(String token, String ticket, ImageView ivImage, ProgressBar progressBar) {
         if (isFinishing() || isDestroyed()) return;
-        String imageUrl = Constants.BASE_URL + "api/play/" + token;
+        String imageUrl = com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + "api/play/" + token;
         com.bumptech.glide.load.model.LazyHeaders.Builder headers =
             new com.bumptech.glide.load.model.LazyHeaders.Builder().addHeader("X-API-Key", Constants.API_KEY);
         String accessToken = new com.mynk.vidora.utils.PrefsManager(this).getAccessToken();

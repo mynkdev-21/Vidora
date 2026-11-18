@@ -278,7 +278,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void playVideoWithTicket(String fileId, String ticket) {
         if (isFinishing() || isDestroyed()) return;
-        String videoUrl = Constants.BASE_URL + "api/play/" + fileId;
+        String videoUrl = com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + "api/play/" + fileId;
 
         Map<String, String> headers = new HashMap<>();
         headers.put("X-API-Key", Constants.API_KEY);
@@ -407,7 +407,7 @@ public class PlayerActivity extends AppCompatActivity {
                             if (avatarObj != null && !String.valueOf(avatarObj).isEmpty() && !"null".equals(String.valueOf(avatarObj))) {
                                 String avatarUrl = String.valueOf(avatarObj);
                                 String avatarPath = avatarUrl.startsWith("/") ? avatarUrl.substring(1) : avatarUrl;
-                                String fullUrl = avatarPath.startsWith("http") ? avatarPath : Constants.BASE_URL + avatarPath;
+                                String fullUrl = avatarPath.startsWith("http") ? avatarPath : com.mynk.vidora.utils.RemoteConfigManager.getBaseUrl() + avatarPath;
                                 android.widget.ImageView ivCreatorAvatar = findViewById(R.id.iv_creator_avatar);
                                 com.bumptech.glide.Glide.with(PlayerActivity.this)
                                     .load(fullUrl)
