@@ -49,6 +49,9 @@
             <TextView android:id="@+id/btn_my_videos" style="@style/Vidora.Control.Secondary"
                 android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
                 android:layout_marginTop="@dimen/space_3" android:text="My files" />
+            <TextView android:id="@+id/btn_studio_earnings" style="@style/Vidora.Control.Secondary"
+                android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
+                android:layout_marginTop="@dimen/space_3" android:text="Earnings and payouts" />
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

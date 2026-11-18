@@ -123,4 +123,25 @@ public interface ApiService {
     // ── Search ────────────────────────────────────────────────────────────────
     @GET("api/files/search")
     Call<FileListResponse> searchFiles(@Query("q") String query, @Query("type") String type, @Query("page") int page);
+
+    @GET("api/earnings/summary")
+    Call<Map<String, Object>> getEarningsSummary();
+
+    @GET("api/earnings")
+    Call<Map<String, Object>> getEarningsHistory(@Query("page") int page, @Query("limit") int limit);
+
+    @GET("api/earnings/referral-stats")
+    Call<Map<String, Object>> getReferralStats();
+
+    @GET("api/earnings/payouts")
+    Call<Map<String, Object>> getPayoutHistory();
+
+    @POST("api/earnings/payouts")
+    Call<Map<String, Object>> requestPayout(@Body Map<String, Object> body);
+
+    @GET("api/users/payment-methods")
+    Call<Map<String, Object>> getPaymentMethods();
+
+    @POST("api/users/payment-methods")
+    Call<Map<String, Object>> savePaymentMethod(@Body Map<String, Object> body);
 }

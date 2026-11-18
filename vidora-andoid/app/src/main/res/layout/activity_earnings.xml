@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/bg_primary">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="horizontal" android:gravity="center_vertical"
+        android:padding="@dimen/content_gutter">
+        <ImageView android:id="@+id/btn_back" style="@style/Vidora.Control.Icon"
+            android:layout_width="@dimen/touch_target" android:layout_height="@dimen/touch_target"
+            android:src="@drawable/ic_arrow_back" android:contentDescription="Back" />
+        <TextView style="@style/Vidora.Text.Title" android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:layout_marginStart="@dimen/space_3"
+            android:text="Earnings" />
+    </LinearLayout>
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" android:fillViewport="true">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:paddingHorizontal="@dimen/content_gutter"
+            android:paddingBottom="@dimen/space_6">
+            <TextView android:id="@+id/tv_status" style="@style/Vidora.Text.Body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Loading your earnings…" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="@drawable/bg_settings_card"
+                android:padding="@dimen/space_5" android:layout_marginTop="@dimen/space_4">
+                <TextView style="@style/Vidora.Text.Caption" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="AVAILABLE TO REQUEST" />
+                <TextView android:id="@+id/tv_available" style="@style/Vidora.Text.Display"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2" android:text="—" />
+                <TextView android:id="@+id/tv_minimum" style="@style/Vidora.Text.Caption"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2" android:text="Minimum payout: —" />
+            </LinearLayout>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginTop="@dimen/space_3">
+                <TextView android:id="@+id/tv_from_views" style="@style/Vidora.Text.Body"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:background="@drawable/bg_settings_card"
+                    android:padding="@dimen/space_4" android:text="View earnings: —" />
+                <TextView android:id="@+id/tv_from_referrals" style="@style/Vidora.Text.Body"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:layout_marginStart="@dimen/space_2"
+                    android:background="@drawable/bg_settings_card"
+                    android:padding="@dimen/space_4" android:text="Referrals: —" />
+            </LinearLayout>
+            <TextView style="@style/Vidora.Text.Section" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_6"
+                android:text="Payout methods" />
+            <TextView android:id="@+id/tv_methods" style="@style/Vidora.Text.Body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2" android:text="Loading methods…" />
+            <TextView android:id="@+id/btn_add_method" style="@style/Vidora.Control.Secondary"
+                android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
+                android:layout_marginTop="@dimen/space_3" android:text="Add payout method" />
+            <TextView android:id="@+id/btn_request_payout" style="@style/Vidora.Control.Primary"
+                android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
+                android:layout_marginTop="@dimen/space_3" android:text="Request payout" />
+            <TextView style="@style/Vidora.Text.Section" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_6"
+                android:text="Referral activity" />
+            <TextView android:id="@+id/tv_referrals" style="@style/Vidora.Text.Body"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2" android:text="Loading referrals…" />
+            <TextView android:id="@+id/btn_share_referral" style="@style/Vidora.Control.Secondary"
+                android:layout_width="match_parent" android:layout_height="@dimen/touch_target"
+                android:layout_marginTop="@dimen/space_3" android:text="Share referral code"
+                android:visibility="gone" />
+            <TextView style="@style/Vidora.Text.Section" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_6"
+                android:text="Recent earnings" />
+            <LinearLayout android:id="@+id/list_earnings" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical" />
+            <TextView style="@style/Vidora.Text.Section" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_6"
+                android:text="Payout history" />
+            <LinearLayout android:id="@+id/list_payouts" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>
