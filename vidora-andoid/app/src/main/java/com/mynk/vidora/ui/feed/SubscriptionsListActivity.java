@@ -134,37 +134,23 @@ public class SubscriptionsListActivity extends AppCompatActivity {
             holder.ivBell.setImageResource(notify ? R.drawable.ic_bell_on : R.drawable.ic_bell_off);
             holder.ivBell.setOnClickListener(v -> {
                 boolean newNotify = !notify;
-                sub.put("notify", newNotify ? 1 : 0);
-                holder.ivBell.setImageResource(newNotify ? R.drawable.ic_bell_on : R.drawable.ic_bell_off);
-
-                // Shake animation
-                android.view.animation.Animation shake = android.view.animation.AnimationUtils.loadAnimation(
-                    SubscriptionsListActivity.this, R.anim.bell_shake);
-                holder.ivBell.startAnimation(shake);
-
-                Map<String, Object> body = new HashMap<>();
-                body.put("notify", newNotify);
-                // Toggle bell via API
-                ApiClient.getService().getSubscriptions(); // placeholder — real call below
-                retrofit2.Call<Map<String, Object>> toggleCall = ApiClient.getService().subscribe(id);
-                // Use PATCH for bell toggle
-                Map<String, String> bellBody = new HashMap<>();
-                bellBody.put("notify", String.valueOf(newNotify));
-                // Actually we need a direct OkHttp call for PATCH with body
-                new Thread(() -> {
-                    try {
-                        okhttp3.MediaType JSON = okhttp3.MediaType.get("application/json");
-                        String jsonBody = "{\"notify\":" + newNotify + "}";
-                        okhttp3.Request request = new okhttp3.Request.Builder()
-                            .url(Constants.BASE_URL + "api/subscribe/" + id + "/bell")
-                            .patch(okhttp3.RequestBody.create(jsonBody, JSON))
-                            .addHeader("X-API-Key", Constants.API_KEY)
-                            .addHeader("Authorization", "Bearer " + com.mynk.vidora.utils.PrefsManager.getStaticToken(SubscriptionsListActivity.this))
-                            .addHeader("Content-Type", "application/json")
-                            .build();
-                        new okhttp3.OkHttpClient().newCall(request).execute();
-                    } catch (Exception ignored) {}
-                }).start();
+                holder.ivBell.setEnabled(false);
+                ApiClient.getService().setSubscriptionBell(id, java.util.Collections.singletonMap("notify", newNotify))
+                    .enqueue(new Callback<Map<String, Object>>() {
+                        @Override public void onResponse(Call<Map<String, Object>> call, Response<Map<String, Object>> response) {
+                            holder.ivBell.setEnabled(true);
+                            if (response.isSuccessful()) {
+                                sub.put("notify", newNotify ? 1 : 0);
+                                holder.ivBell.setImageResource(newNotify ? R.drawable.ic_bell_on : R.drawable.ic_bell_off);
+                            } else {
+                                android.widget.Toast.makeText(SubscriptionsListActivity.this, "Could not update notifications", android.widget.Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                        @Override public void onFailure(Call<Map<String, Object>> call, Throwable error) {
+                            holder.ivBell.setEnabled(true);
+                            android.widget.Toast.makeText(SubscriptionsListActivity.this, "Could not update notifications", android.widget.Toast.LENGTH_SHORT).show();
+                        }
+                    });
             });
 
             // Unsubscribe button

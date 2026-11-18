@@ -132,7 +132,7 @@ public class ApiClient {
     /** Uploads share the normal authentication/refresh interceptors but allow a slow body write. */
     public static Call newUploadCall(Request request) {
         OkHttpClient client = (OkHttpClient) getClient().callFactory();
-        return client.newBuilder().writeTimeout(300, TimeUnit.SECONDS).newCall(request);
+        return client.newBuilder().writeTimeout(300, TimeUnit.SECONDS).build().newCall(request);
     }
 
     private static int responseCount(Response response) {

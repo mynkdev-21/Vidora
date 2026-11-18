@@ -104,6 +104,9 @@ public interface ApiService {
     @GET("api/subscribe/list")
     Call<Map<String, Object>> getSubscriptions();
 
+    @PATCH("api/subscribe/{creatorId}/bell")
+    Call<Map<String, Object>> setSubscriptionBell(@Path("creatorId") String creatorId, @Body Map<String, Boolean> body);
+
     // ── Creator Profile ───────────────────────────────────────────────────────
     @GET("api/creators/{id}")
     Call<Map<String, Object>> getCreatorProfile(@Path("id") String id);
