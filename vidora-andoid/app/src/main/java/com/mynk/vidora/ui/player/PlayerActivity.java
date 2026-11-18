@@ -56,6 +56,8 @@ public class PlayerActivity extends AppCompatActivity {
     private boolean isControlsVisible = true;
     private boolean isSeeking = false;
     private ViewTracker viewTracker;
+    private int speedIndex;
+    private static final float[] SPEEDS = {1f, 1.25f, 1.5f, 2f};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +75,7 @@ public class PlayerActivity extends AppCompatActivity {
         tvTotalTime = findViewById(R.id.tv_total_time);
         tvTitle = findViewById(R.id.tv_player_title);
         loadingSpinner = findViewById(R.id.loading_spinner);
+        ((View) playerView.getParent()).getLayoutParams().height = portraitPlayerHeight();
 
         token = getIntent().getStringExtra("token");
         fileName = getIntent().getStringExtra("file_name");
@@ -88,6 +91,7 @@ public class PlayerActivity extends AppCompatActivity {
         loadBannerAds();
 
         String localPath = getIntent().getStringExtra("local_path");
+        if (localPath != null && !localPath.isEmpty()) findViewById(R.id.btn_player_share).setVisibility(View.GONE);
 
         if (localPath != null && !localPath.isEmpty()) {
             playLocalVideo(localPath);
@@ -136,6 +140,19 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void setupControls() {
+        findViewById(R.id.btn_player_share).setOnClickListener(v -> {
+            if (token == null) return;
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("text/plain");
+            share.putExtra(Intent.EXTRA_TEXT, Constants.WEB_BASE_URL + "v/" + token);
+            startActivity(Intent.createChooser(share, "Share via"));
+        });
+        TextView speedButton = findViewById(R.id.btn_player_speed);
+        speedButton.setOnClickListener(v -> {
+            speedIndex = (speedIndex + 1) % SPEEDS.length;
+            if (player != null) player.setPlaybackSpeed(SPEEDS[speedIndex]);
+            speedButton.setText("Speed " + SPEEDS[speedIndex] + "×");
+        });
         // Tap to toggle controls
         playerView.setOnClickListener(v -> toggleControls());
         controlsOverlay.setOnClickListener(v -> toggleControls());
@@ -526,11 +543,15 @@ public class PlayerActivity extends AppCompatActivity {
             findViewById(R.id.bottom_nav).setVisibility(View.GONE);
         } else {
             // Portrait — restore
-            playerContainer.getLayoutParams().height = (int) (230 * getResources().getDisplayMetrics().density);
+            playerContainer.getLayoutParams().height = portraitPlayerHeight();
             findViewById(R.id.scroll_content).setVisibility(View.VISIBLE);
             findViewById(R.id.bottom_nav).setVisibility(View.VISIBLE);
         }
         playerContainer.requestLayout();
+    }
+
+    private int portraitPlayerHeight() {
+        return getResources().getDisplayMetrics().widthPixels * 9 / 16;
     }
 
     @Override
