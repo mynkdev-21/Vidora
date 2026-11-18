@@ -38,6 +38,12 @@ public interface ApiService {
     @GET("api/files")
     Call<FileListResponse> getFiles(@Query("page") int page, @Query("limit") int limit);
 
+    @retrofit2.http.DELETE("api/files/{id}")
+    Call<Map<String, Object>> deleteFile(@Path("id") String id);
+
+    @POST("api/share/{fileId}/generate")
+    Call<Map<String, Object>> generateShareLink(@Path("fileId") String fileId);
+
     // ── Trending (public — random files from all users) ───────────────────────
     @GET("api/files/trending")
     Call<FileListResponse> getTrending(@Query("limit") int limit);

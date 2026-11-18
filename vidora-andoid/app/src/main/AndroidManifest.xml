@@ -96,6 +96,8 @@
         <activity android:name=".ui.feed.SubscriptionsListActivity" android:exported="false" />
         <activity android:name=".ui.creator.CreatorProfileActivity" android:exported="false" />
         <activity android:name=".ui.upload.UploadActivity" android:exported="false" />
+        <activity android:name=".ui.creator.CreatorHubActivity" android:exported="false" />
+        <activity android:name=".ui.creator.MyVideosActivity" android:exported="false" />
 
         <!-- Saved/Bookmarks -->
         <activity android:name=".ui.saved.SavedActivity" android:exported="false" />

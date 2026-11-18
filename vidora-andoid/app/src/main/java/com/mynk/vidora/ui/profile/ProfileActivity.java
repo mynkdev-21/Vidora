@@ -49,6 +49,8 @@ public class ProfileActivity extends AppCompatActivity {
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
         if (prefs.isLoggedIn()) {
+            findViewById(R.id.btn_creator_hub).setOnClickListener(v ->
+                startActivity(new Intent(this, com.mynk.vidora.ui.creator.CreatorHubActivity.class)));
             // Show logged in state
             layoutLoggedIn.setVisibility(View.VISIBLE);
             layoutLoggedOut.setVisibility(View.GONE);
