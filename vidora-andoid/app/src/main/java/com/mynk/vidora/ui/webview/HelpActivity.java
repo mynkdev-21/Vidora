@@ -2,7 +2,6 @@ package com.mynk.vidora.ui.webview;
 
 import android.os.Bundle;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -28,8 +27,7 @@ public class HelpActivity extends AppCompatActivity {
         FullScreenHelper.enable(this);
 
         webView = findViewById(R.id.webview_help);
-        webView.setWebViewClient(new WebViewClient());
-        webView.getSettings().setJavaScriptEnabled(true);
+        PolicyWebView.configure(webView);
         webView.setBackgroundColor(0xFF08080F);
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
@@ -48,12 +46,12 @@ public class HelpActivity extends AppCompatActivity {
                         }
                     }
                 }
-                webView.loadUrl(url);
+                PolicyWebView.load(webView, url, DEFAULT_URL);
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                webView.loadUrl(DEFAULT_URL);
+                PolicyWebView.load(webView, DEFAULT_URL, DEFAULT_URL);
             }
         });
     }

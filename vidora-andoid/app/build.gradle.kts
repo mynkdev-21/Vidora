@@ -38,6 +38,8 @@ android {
 
         // Public client identifier (ships in the APK; not a secret). Keep it out of git.
         buildConfigField("String", "API_KEY", quoted(cfg("VIDORA_API_KEY", "")))
+        // Optional comma-separated HTTPS hosts for externally hosted policy/help pages.
+        buildConfigField("String", "POLICY_WEB_HOSTS", quoted(cfg("VIDORA_POLICY_WEB_HOSTS", "")))
     }
 
     buildFeatures {

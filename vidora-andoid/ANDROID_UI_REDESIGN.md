@@ -33,3 +33,7 @@ Media3 playback, image loading, paid-view tickets, anonymous playback, mobile be
 4. File visibility management and a video quality selector have no supported Android/backend control in this implementation. They are intentionally absent from the UI. Recommended content has no recommendation API; Home displays real trending files and recent history.
 
 Host verification: Android debug assembly and 10 JVM unit tests passed. Instrumentation test sources compiled but were not run. XML parsed for all 38 layouts; all 27 Activities are registered and all static `findViewById` references resolve. Relevant backend authentication, media, ownership, payout, and referral tests passed 35/35 against an isolated MySQL test database.
+
+## Policy/help WebView configuration
+
+Privacy, terms, help, and password-reset pages are loaded inside the app only from `WEB_BASE_URL` or explicit comma-separated HTTPS hosts in the build property `VIDORA_POLICY_WEB_HOSTS`. Configure that property at build time if this content is hosted by an external provider. A settings URL outside those hosts falls back to the corresponding Vidora page. Links from those pages to other HTTPS sites open in the system browser. JavaScript and DOM storage stay enabled for the approved web application; file/content access and mixed content are disabled. Debug builds may load HTTP only on the configured web base host for local development. Release builds require HTTPS.

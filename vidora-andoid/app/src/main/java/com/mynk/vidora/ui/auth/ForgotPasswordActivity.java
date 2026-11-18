@@ -2,13 +2,13 @@ package com.mynk.vidora.ui.auth;
 
 import android.os.Bundle;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.mynk.vidora.R;
 import com.mynk.vidora.api.ApiClient;
 import com.mynk.vidora.utils.FullScreenHelper;
+import com.mynk.vidora.ui.webview.PolicyWebView;
 
 import java.util.Map;
 
@@ -29,8 +29,7 @@ public class ForgotPasswordActivity extends AppCompatActivity {
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
 
         WebView webView = findViewById(R.id.webview);
-        webView.setWebViewClient(new WebViewClient());
-        webView.getSettings().setJavaScriptEnabled(true);
+        PolicyWebView.configure(webView);
         webView.setBackgroundColor(0xFF08080F);
 
         // Fetch URL from settings API (forgot_password_url key)
@@ -48,12 +47,12 @@ public class ForgotPasswordActivity extends AppCompatActivity {
                         }
                     }
                 }
-                webView.loadUrl(url);
+                PolicyWebView.load(webView, url, DEFAULT_URL);
             }
 
             @Override
             public void onFailure(Call<Map<String, Object>> call, Throwable t) {
-                webView.loadUrl(DEFAULT_URL);
+                PolicyWebView.load(webView, DEFAULT_URL, DEFAULT_URL);
             }
         });
     }
