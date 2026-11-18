@@ -120,6 +120,14 @@ public class ProfileActivity extends AppCompatActivity {
 
             // Sign out
             findViewById(R.id.btn_signout).setOnClickListener(v -> {
+                String refreshToken = prefs.getRefreshToken();
+                if (refreshToken != null) {
+                    ApiClient.getService().logout(java.util.Collections.singletonMap("refreshToken", refreshToken))
+                        .enqueue(new retrofit2.Callback<Void>() {
+                            @Override public void onResponse(retrofit2.Call<Void> call, retrofit2.Response<Void> response) {}
+                            @Override public void onFailure(retrofit2.Call<Void> call, Throwable error) {}
+                        });
+                }
                 prefs.clear();
                 ApiClient.setAccessToken(null);
                 recreate(); // refresh to show logged out state

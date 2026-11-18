@@ -85,7 +85,10 @@ public class LoginActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null && response.body().success) {
                     AuthResponse.Data data = response.body().data;
                     PrefsManager prefs = new PrefsManager(LoginActivity.this);
-                    prefs.saveTokens(data.accessToken, data.refreshToken);
+                    if (!prefs.saveTokens(data.accessToken, data.refreshToken)) {
+                        showError("Secure session storage is unavailable. Please try again.", false);
+                        return;
+                    }
                     prefs.saveUser(data.user.id, data.user.name, data.user.email);
                     ApiClient.setAccessToken(data.accessToken);
 
