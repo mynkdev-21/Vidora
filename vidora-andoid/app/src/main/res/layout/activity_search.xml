@@ -51,52 +51,17 @@
         android:inputType="text"
         android:layout_marginBottom="18dp" />
 
-    <!-- Trending tags -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Trending searches"
-        android:textSize="12sp"
-        android:textColor="@color/text_secondary"
-        android:fontFamily="sans-serif-medium"
-        android:layout_marginBottom="10dp" />
+    <ProgressBar android:id="@+id/search_progress"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" android:visibility="gone" />
 
-    <com.google.android.material.chip.ChipGroup
-        android:fitsSystemWindows="true"
-    android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+    <TextView android:id="@+id/search_status"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Trending files" android:textColor="@color/text_secondary"
+        android:padding="12dp" />
 
-        <com.google.android.material.chip.Chip
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="#flutter"
-            android:textColor="@color/purple_light"
-            android:textSize="11sp"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
-
-        <com.google.android.material.chip.Chip
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="#travel"
-            android:textColor="@color/purple_light"
-            android:textSize="11sp"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
-
-        <com.google.android.material.chip.Chip
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="#cooking"
-            android:textColor="@color/purple_light"
-            android:textSize="11sp"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
-
-        <com.google.android.material.chip.Chip
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="#music"
-            android:textColor="@color/text_muted"
-            android:textSize="11sp"
-            style="@style/Widget.MaterialComponents.Chip.Choice" />
-    </com.google.android.material.chip.ChipGroup>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/search_results"
+        android:layout_width="match_parent" android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>

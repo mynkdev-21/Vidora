@@ -123,6 +123,9 @@ public class HomeActivity extends AppCompatActivity {
         findViewById(R.id.btn_notifications_top).setOnClickListener(v ->
             startActivity(new Intent(this, NotificationsActivity.class))
         );
+        findViewById(R.id.btn_search_top).setOnClickListener(v ->
+            startActivity(new Intent(this, com.mynk.vidora.ui.search.SearchActivity.class))
+        );
         findViewById(R.id.btn_profile_top).setOnClickListener(v ->
             startActivity(new Intent(this, ProfileActivity.class))
         );
