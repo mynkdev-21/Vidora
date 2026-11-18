@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="Your Feed"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textColor="@color/text_primary"
             android:fontFamily="sans-serif-medium"
             android:layout_marginStart="12dp" />
@@ -39,13 +39,13 @@
         <TextView
             android:id="@+id/btn_all_subs"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="@dimen/touch_target"
             android:text="All"
             android:textSize="12sp"
             android:textColor="@color/purple_light"
             android:background="@drawable/bg_btn_subscribed"
             android:paddingHorizontal="14dp"
-            android:paddingVertical="6dp" />
+            android:gravity="center" android:paddingVertical="6dp" />
     </LinearLayout>
 
     <!-- Subscribed Creators Horizontal Scroll -->
@@ -109,7 +109,7 @@
                 android:layout_width="80dp"
                 android:layout_height="80dp"
                 android:src="@drawable/ic_feed"
-                android:tint="#20A78BFA"
+                android:tint="@color/purple_light"
                 android:layout_marginBottom="20dp" />
 
             <TextView

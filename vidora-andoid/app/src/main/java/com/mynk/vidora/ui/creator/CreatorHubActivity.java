@@ -30,7 +30,6 @@ public class CreatorHubActivity extends AppCompatActivity {
         findViewById(R.id.btn_studio_upload).setOnClickListener(v -> startActivity(new Intent(this, UploadActivity.class)));
         findViewById(R.id.btn_my_videos).setOnClickListener(v -> startActivity(new Intent(this, MyVideosActivity.class)));
         findViewById(R.id.btn_studio_earnings).setOnClickListener(v -> startActivity(new Intent(this, EarningsActivity.class)));
-        loadStats();
     }
 
     @Override protected void onResume() {

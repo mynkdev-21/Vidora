@@ -18,6 +18,7 @@ import com.mynk.vidora.api.ApiClient;
 import com.mynk.vidora.ui.auth.LoginActivity;
 import com.mynk.vidora.utils.Constants;
 import com.mynk.vidora.utils.PrefsManager;
+import com.mynk.vidora.utils.MoneyDisplay;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,15 +68,10 @@ public class EarningsActivity extends AppCompatActivity {
         return value instanceof Map ? (Map<String, Object>) value : null;
     }
     private static double number(Object value) {
-        if (value instanceof Number) return ((Number) value).doubleValue();
-        if (value instanceof String) {
-            try { return Double.parseDouble((String) value); } catch (NumberFormatException ignored) {}
-        }
-        return Double.NaN;
+        return MoneyDisplay.number(value);
     }
     private static String money(Object value) {
-        double valueNumber = number(value);
-        return Double.isFinite(valueNumber) ? String.format(Locale.US, "$%,.2f", valueNumber) : "—";
+        return MoneyDisplay.usd(value);
     }
     private void status(String message) {
         if (!isFinishing()) ((TextView) findViewById(R.id.tv_status)).setText(message);

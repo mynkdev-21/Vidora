@@ -40,6 +40,7 @@ public class FileDetailActivity extends AppCompatActivity {
     private ImageView ivThumbnail, ivFileIcon;
     private TextView tvFileName, tvFileSubtitle, tvFileType, tvFileSize, tvUploader, tvViews;
     private TextView btnUnlock;
+    private boolean detailsLoaded;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,7 +68,6 @@ public class FileDetailActivity extends AppCompatActivity {
         }
 
         loadFileDetails();
-        updateUnlockButton();
 
         // Load banner ads — ID comes from API via AdsConfig
         loadBannerAds();
@@ -103,6 +103,7 @@ public class FileDetailActivity extends AppCompatActivity {
 
         // Unlock — MUST watch ad, no bypass
         btnUnlock.setOnClickListener(v -> {
+            if (!detailsLoaded) { loadFileDetails(); return; }
             if (!com.mynk.vidora.ads.AdsConfig.isAdsEnabled()) {
                 // Ads disabled by admin — unlock directly
                 openPlayer();
@@ -171,27 +172,8 @@ public class FileDetailActivity extends AppCompatActivity {
     }
 
     private void updateUnlockButton() {
-        if (!com.mynk.vidora.ads.AdsConfig.isAdsEnabled()) {
-            btnUnlock.setText("▶  Unlock File");
-            btnUnlock.setAlpha(1f);
-            return;
-        }
-        if (AdManager.getInstance().isAdReady()) {
-            btnUnlock.setText("▶  Unlock File");
-            btnUnlock.setAlpha(1f);
-        } else {
-            btnUnlock.setText("▶  Unlock File (Loading ad…)");
-            btnUnlock.setAlpha(0.7f);
-            // After 10 seconds, stop waiting and enable button anyway
-            btnUnlock.postDelayed(() -> {
-                if (!AdManager.getInstance().isAdReady()) {
-                    btnUnlock.setText("▶  Unlock File");
-                    btnUnlock.setAlpha(1f);
-                }
-            }, 10000);
-            // Keep checking every 2 sec until 10 sec timeout
-            btnUnlock.postDelayed(this::updateUnlockButton, 2000);
-        }
+        btnUnlock.setText(fileType.equalsIgnoreCase("image") ? "View image" : "Play video");
+        btnUnlock.setAlpha(1f);
     }
 
     private void updateBookmarkState() {
@@ -223,6 +205,8 @@ public class FileDetailActivity extends AppCompatActivity {
     }
 
     private void loadFileDetails() {
+        btnUnlock.setEnabled(false);
+        btnUnlock.setText("Loading file…");
         ApiClient.getService().getSharedFile(token).enqueue(new Callback<ShareViewResponse>() {
             @Override
             public void onResponse(Call<ShareViewResponse> call, Response<ShareViewResponse> response) {
@@ -232,6 +216,9 @@ public class FileDetailActivity extends AppCompatActivity {
                     tvFileName.setText(file.name != null ? file.name : "Untitled");
                     String type = capitalize(file.type != null ? file.type : "file");
                     fileType = file.type != null ? file.type : "video";
+                    detailsLoaded = true;
+                    btnUnlock.setEnabled(true);
+                    updateUnlockButton();
                     tvFileSubtitle.setText(type + " • " + formatBytes(file.size));
                     tvFileType.setText(type);
                     tvFileSize.setText(formatBytes(file.size));
@@ -250,9 +237,7 @@ public class FileDetailActivity extends AppCompatActivity {
                         file.size
                     );
 
-                    // Update unlock button text based on type
                     if (fileType.equalsIgnoreCase("image")) {
-                        btnUnlock.setText("  View Image");
                         btnUnlock.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_image, 0, 0, 0);
                         btnUnlock.setCompoundDrawablePadding(16);
                     }
@@ -271,12 +256,16 @@ public class FileDetailActivity extends AppCompatActivity {
                     }
                 } else {
                     Toast.makeText(FileDetailActivity.this, "File not found", Toast.LENGTH_SHORT).show();
+                    btnUnlock.setEnabled(true);
+                    btnUnlock.setText("Retry loading file");
                 }
             }
 
             @Override
             public void onFailure(Call<ShareViewResponse> call, Throwable t) {
                 Toast.makeText(FileDetailActivity.this, "Network error", Toast.LENGTH_SHORT).show();
+                btnUnlock.setEnabled(true);
+                btnUnlock.setText("Retry loading file");
             }
         });
     }

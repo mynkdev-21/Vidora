@@ -270,6 +270,8 @@ public class PlayerActivity extends AppCompatActivity {
                 .setEnableDecoderFallback(true))
             .build();
 
+        player.setPlaybackSpeed(SPEEDS[speedIndex]);
+
         playerView.setPlayer(player);
         player.setMediaItem(MediaItem.fromUri(android.net.Uri.fromFile(new java.io.File(filePath))));
         player.setPlayWhenReady(true);
@@ -319,6 +321,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         playerView.setPlayer(player);
         player.setMediaSource(mediaSource);
+        player.setPlaybackSpeed(SPEEDS[speedIndex]);
         player.setPlayWhenReady(true);
 
         player.addListener(new Player.Listener() {

@@ -16,16 +16,14 @@ import java.util.HashMap;
 
 /**
  * Google Play Billing subscription manager.
- * Plans:
- *   - vidora_monthly: ₹199/month, 3-day free trial
- *   - vidora_yearly: ₹1499/year, 7-day free trial
+ * Available plans and localized prices are resolved from Google Play.
  * 
  * Benefit: Ad-free experience
  * 
  * Setup in Google Play Console:
  *   1. Go to Monetize → Products → Subscriptions
- *   2. Create "vidora_monthly" — ₹199, 1 month, 3-day trial
- *   3. Create "vidora_yearly" — ₹1499, 1 year, 7-day trial
+ *   2. Configure product IDs for the monthly, quarterly and yearly plans.
+ *   3. Configure prices and offers in Play Console.
  */
 public class SubscriptionManager implements PurchasesUpdatedListener {
 
