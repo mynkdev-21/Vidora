@@ -131,6 +131,6 @@ describe("object-level authorization (IDOR)", () => {
     await keyed(http().delete(`/api/share/${f.id}/revoke`), owner.token);
     assert.equal((await keyed(http().get(`/api/share/view/${share}`))).status, 404);
     assert.equal((await keyed(http().get(`/api/share/stream/${share}`))).status, 404);
-    assert.equal((await keyed(http().post(`/api/view/${share}/ticket`))).status, 404);
+    assert.equal((await keyed(http().post(`/api/view/${share}/ticket`), owner.token)).status, 404);
   });
 });

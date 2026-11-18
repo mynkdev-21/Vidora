@@ -12,14 +12,15 @@ const { http, keyed, createUser, createFile, setSetting, one, closeDb } = await 
 
 after(closeDb);
 
-test("req.ip comes from the trusted hop, not the spoofable first entry", async () => {
+test("paid tickets require authenticated identity regardless of forwarded IP", async () => {
   await setSetting("view_min_watch_seconds", 10);
   const owner = await createUser();
   const f = await createFile(owner.id);
 
   // Client claims 6.6.6.6; the proxy appended the real address 198.51.100.7.
-  const res = await keyed(http().post(`/api/view/${f.id}/ticket`)).set("X-Forwarded-For", "6.6.6.6, 198.51.100.7");
+  const viewer = await createUser();
+  const res = await keyed(http().post(`/api/view/${f.id}/ticket`), viewer.token).set("X-Forwarded-For", "6.6.6.6, 198.51.100.7");
   assert.equal(res.status, 201);
   const row = await one("SELECT viewer_key FROM view_tickets WHERE file_id = ?", [f.id]);
-  assert.equal(row.viewer_key, "ip:198.51.100.7");
+  assert.equal(row.viewer_key, `u:${viewer.id}`);
 });

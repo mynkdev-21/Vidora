@@ -15,6 +15,7 @@ export const CLEANUP_RULES = Object.freeze({
   password_resets:     "expires_at < NOW() OR (used = 1 AND created_at < NOW() - INTERVAL 1 DAY)",
   // De-duplication only needs the current UTC day; keep two days of slack.
   view_counted:        "view_date < UTC_DATE() - INTERVAL 2 DAY",
+  view_daily_counters: "view_date < UTC_DATE() - INTERVAL 2 DAY",
 });
 
 export async function cleanupExpiredRows(conn = pool) {

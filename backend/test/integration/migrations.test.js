@@ -34,6 +34,7 @@ const EXPECTED_TABLES = [
   "admins", "app_settings", "earnings", "email_verifications", "files", "messages", "notifications",
   "password_resets", "payment_methods", "payouts", "referrals", "refresh_tokens", "share_tokens",
   "stream_tokens", "subscriptions", "ticket_replies", "tickets", "user_api_keys", "users", "view_logs",
+  "view_daily_counters",
 ];
 
 test("a clean install creates every table the code uses", async () => {
@@ -110,4 +111,21 @@ test("migration filenames are ordered and unique", () => {
   const names = listMigrationFiles().map((f) => f.name);
   assert.deepEqual([...names].sort(), names);
   assert.equal(new Set(names.map((n) => n.slice(0, 3))).size, names.length);
+});
+
+test("006 backfills daily counters from existing counted views", async () => {
+  const conn = await freshDb();
+  await runMigrations({ database: DB, upTo: "005_admin_audit_log.sql", ...quiet });
+  const userId = crypto.randomUUID();
+  await conn.query("INSERT INTO users (id, name, email, password_hash) VALUES (?, 'U', ?, 'x')", [userId, `${userId}@example.test`]);
+  for (let i = 0; i < 2; i++) {
+    const fileId = crypto.randomUUID();
+    await conn.query("INSERT INTO files (id, user_id, original_name, stored_name, mime_type, storage_path) VALUES (?, ?, 'f', ?, 'video/mp4', 'x')",
+      [fileId, userId, `${fileId}.mp4`]);
+    await conn.query("INSERT INTO view_counted (file_id, viewer_key, view_date) VALUES (?, 'u:legacy-viewer', UTC_DATE())", [fileId]);
+  }
+  await runMigrations({ database: DB, ...quiet });
+  const [[counter]] = await conn.query("SELECT counted FROM view_daily_counters WHERE viewer_key = 'u:legacy-viewer' AND view_date = UTC_DATE()");
+  assert.equal(Number(counter.counted), 2);
+  await conn.end();
 });

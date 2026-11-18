@@ -1,9 +1,8 @@
 /**
  * Paid view counting (audit finding F5).
  *
- * A view only counts when the client:
- *   1. requests a one-time ticket when playback starts   POST /api/view/:token/ticket
- *   2. redeems it after the minimum watch time            POST /api/view/:token { ticket }
+ * A paid view requires an authenticated ticket, completed ticket-bound media
+ * delivery from /api/play, elapsed time, and an atomic daily-cap reservation.
  *
  * The server decides everything: who the viewer is (user ID when signed in,
  * otherwise req.ip — which honours TRUST_PROXY and ignores raw
@@ -29,9 +28,8 @@ export const VIEW_DEFAULTS = Object.freeze({
 
 const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
 
-function viewerKeyFor(req) {
-  return req.user ? `u:${req.user.id}` : `ip:${req.ip}`;
-}
+const viewerKeyFor = (req) => `u:${req.user.id}`;
+const deliveryThreshold = (total) => Math.min(64 * 1024, Math.max(1, Math.ceil(total * 0.1)));
 
 async function minWatchSeconds(mimeType, conn = pool) {
   return String(mimeType || "").startsWith("image/")
@@ -44,7 +42,28 @@ export async function playFile(req, res, next) {
   try {
     const found = await findActiveFile(req.params.id);
     if (!found) return res.status(404).json({ success: false, message: "File not found." });
-    await sendStoredFile(req, res, found.file);
+    const ticket = req.get("X-View-Ticket");
+    if (!ticket) return await sendStoredFile(req, res, found.file);
+    if (!req.user || ticket.length < 20 || ticket.length > 100) {
+      return res.status(401).json({ success: false, message: "A valid signed-in view ticket is required." });
+    }
+    const ticketHash = sha256(ticket);
+    const [rows] = await pool.query(
+      `SELECT id FROM view_tickets WHERE ticket_hash = ? AND file_id = ?
+       AND viewer_key = ? AND redeemed_at IS NULL AND expires_at > NOW()`,
+      [ticketHash, found.file.id, viewerKeyFor(req)]
+    );
+    if (!rows.length) return res.status(403).json({ success: false, message: "Invalid view ticket." });
+    await sendStoredFile(req, res, found.file, async ({ start, bytes, total }) => {
+      if (start !== 0 || !Number.isSafeInteger(total) || total <= 0 ||
+          !Number.isSafeInteger(bytes) || bytes < deliveryThreshold(total)) return;
+      await pool.query(
+        `UPDATE view_tickets SET delivered_at = COALESCE(delivered_at, NOW())
+         WHERE ticket_hash = ? AND file_id = ? AND viewer_key = ?
+           AND redeemed_at IS NULL AND expires_at > NOW()`,
+        [ticketHash, found.file.id, viewerKeyFor(req)]
+      );
+    });
   } catch (err) {
     next(err);
   }
@@ -81,12 +100,17 @@ export async function issueViewTicket(req, res, next) {
  * caller's transaction. Returns the reason code ("ok" means counted).
  */
 async function decideOutcome(conn, { file, viewerKey }) {
-  // Neither the file's owner nor (for copies) the original uploader earns from their own views.
+  // Every payable ticket is tied to an authenticated account.
   if (viewerKey === `u:${file.user_id}` || viewerKey === `u:${file.payee_user_id}`) return "self_view";
 
   const cap = await getNumericSetting("view_daily_cap_per_viewer", VIEW_DEFAULTS.dailyCapPerViewer, conn);
-  const [[{ today }]] = await conn.query(
-    "SELECT COUNT(*) AS today FROM view_counted WHERE viewer_key = ? AND view_date = UTC_DATE()",
+  await conn.query(
+    `INSERT INTO view_daily_counters (viewer_key, view_date, counted)
+     VALUES (?, UTC_DATE(), 0) ON DUPLICATE KEY UPDATE counted = counted`,
+    [viewerKey]
+  );
+  const [[{ counted: today }]] = await conn.query(
+    "SELECT counted FROM view_daily_counters WHERE viewer_key = ? AND view_date = UTC_DATE() FOR UPDATE",
     [viewerKey]
   );
   if (today >= cap) return "viewer_daily_cap";
@@ -96,7 +120,12 @@ async function decideOutcome(conn, { file, viewerKey }) {
     "INSERT IGNORE INTO view_counted (file_id, viewer_key, view_date) VALUES (?, ?, UTC_DATE())",
     [file.id, viewerKey]
   );
-  return ins.affectedRows === 1 ? "ok" : "duplicate";
+  if (ins.affectedRows !== 1) return "duplicate";
+  await conn.query(
+    "UPDATE view_daily_counters SET counted = counted + 1 WHERE viewer_key = ? AND view_date = UTC_DATE()",
+    [viewerKey]
+  );
+  return "ok";
 }
 
 async function recordCountedView(conn, { file, shareToken, ip }) {
@@ -139,17 +168,22 @@ export async function redeemView(req, res, next) {
     await conn.beginTransaction();
 
     const [rows] = await conn.query(
-      `SELECT id, file_id, share_token, viewer_key, redeemed_at,
+      `SELECT id, file_id, share_token, viewer_key, redeemed_at, delivered_at,
               expires_at <= NOW() AS expired,
-              TIMESTAMPDIFF(SECOND, issued_at, NOW()) AS elapsed
+              TIMESTAMPDIFF(SECOND, delivered_at, NOW()) AS elapsed
        FROM view_tickets WHERE ticket_hash = ? FOR UPDATE`,
       [sha256(ticket)]
     );
     const t = rows[0];
 
-    if (!t || t.file_id !== file.id || t.redeemed_at || t.expired) {
+    if (!t || t.file_id !== file.id || t.viewer_key !== viewerKeyFor(req) || t.redeemed_at || t.expired) {
       await conn.rollback();
       return res.status(400).json({ success: false, code: "INVALID_VIEW_TICKET", message: "View ticket is invalid, expired or already used." });
+    }
+
+    if (!t.delivered_at) {
+      await conn.rollback();
+      return res.status(400).json({ success: false, code: "MEDIA_DELIVERY_REQUIRED", message: "Ticket-bound media delivery is required." });
     }
 
     const minSeconds = await minWatchSeconds(file.mime_type, conn);

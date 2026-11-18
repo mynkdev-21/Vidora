@@ -31,8 +31,18 @@ const summary = async (user) => (await keyed(http().get("/api/earnings/summary")
 
 async function countedView(ref, viewer) {
   const t = await keyed(http().post(`/api/view/${ref}/ticket`), viewer.token);
+  assert.equal(t.status, 201, t.text);
   const hash = crypto.createHash("sha256").update(t.body.data.ticket).digest("hex");
-  await pool.query("UPDATE view_tickets SET issued_at = DATE_SUB(issued_at, INTERVAL 60 SECOND) WHERE ticket_hash = ?", [hash]);
+  const [[row]] = await pool.query("SELECT stored_name FROM files WHERE id = (SELECT file_id FROM view_tickets WHERE ticket_hash = ?)", [hash]);
+  const { uploadsPath } = await import("../helpers.js");
+  (await import("fs")).writeFileSync(uploadsPath(row.stored_name), Buffer.alloc(128 * 1024, 7));
+  const delivery = await keyed(http().get(`/api/play/${ref}`), viewer.token).set("X-View-Ticket", t.body.data.ticket);
+  assert.equal(delivery.status, 200);
+  for (let i = 0; i < 50; i++) {
+    if ((await one("SELECT delivered_at FROM view_tickets WHERE ticket_hash = ?", [hash]))?.delivered_at) break;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  await pool.query("UPDATE view_tickets SET issued_at = DATE_SUB(issued_at, INTERVAL 60 SECOND), delivered_at = DATE_SUB(delivered_at, INTERVAL 60 SECOND) WHERE ticket_hash = ?", [hash]);
   return keyed(http().post(`/api/view/${ref}`), viewer.token).send({ ticket: t.body.data.ticket });
 }
 

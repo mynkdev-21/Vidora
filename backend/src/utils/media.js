@@ -53,7 +53,15 @@ export function setContentSafetyHeaders(res, mimeType) {
   res.setHeader("Cache-Control", "no-store, private");
 }
 
-function pipeStream(stream, res) {
+function pipeStream(stream, res, onDelivered, delivery) {
+  let ended = false;
+  let observedBytes = 0;
+  stream.on("data", (chunk) => { observedBytes += chunk.length; });
+  stream.on("end", () => { ended = true; });
+  if (onDelivered) res.once("finish", () => {
+    if (ended) Promise.resolve(onDelivered({ ...delivery, bytes: observedBytes }))
+      .catch((err) => console.error("Delivery evidence error:", err.message));
+  });
   stream.on("error", (err) => {
     console.error("Media stream error:", err.message);
     res.destroy(err);
@@ -66,7 +74,7 @@ function pipeStream(stream, res) {
  * Local disk first (legacy and local provider), then the configured cloud
  * provider. Unsafe stored names are refused, never resolved.
  */
-export async function sendStoredFile(req, res, file) {
+export async function sendStoredFile(req, res, file, onDelivered) {
   const localPath = resolveUploadPath(file.stored_name);
   if (!localPath) {
     console.warn(`Refused to serve file ${file.id}: unsafe stored_name.`);
@@ -89,10 +97,12 @@ export async function sendStoredFile(req, res, file) {
       res.status(206);
       res.setHeader("Content-Range", `bytes ${range.start}-${range.end}/${stat.size}`);
       res.setHeader("Content-Length", range.end - range.start + 1);
-      return pipeStream(fs.createReadStream(localPath, range), res);
+      return pipeStream(fs.createReadStream(localPath, range), res, onDelivered,
+        { start: range.start, bytes: range.end - range.start + 1, total: stat.size });
     }
     res.setHeader("Content-Length", stat.size);
-    return pipeStream(fs.createReadStream(localPath), res);
+    return pipeStream(fs.createReadStream(localPath), res, onDelivered,
+      { start: 0, bytes: stat.size, total: stat.size });
   }
 
   // Not on local disk — ask the active cloud provider.
@@ -112,5 +122,8 @@ export async function sendStoredFile(req, res, file) {
   } else if (remote.size) {
     res.setHeader("Content-Length", remote.size);
   }
-  return pipeStream(remote.stream, res);
+  return pipeStream(remote.stream, res, onDelivered,
+    { start: remote.partial ? remote.start : 0,
+      bytes: remote.partial ? remote.end - remote.start + 1 : remote.size,
+      total: remote.size });
 }
