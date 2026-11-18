@@ -43,6 +43,7 @@ public class MyVideosActivity extends AppCompatActivity {
     private boolean hasMore = true;
     private boolean loading;
     private Call<FileListResponse> listCall;
+    private boolean resumedOnce;
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,6 +74,19 @@ public class MyVideosActivity extends AppCompatActivity {
     @Override protected void onDestroy() {
         if (listCall != null) listCall.cancel();
         super.onDestroy();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        if (!resumedOnce) { resumedOnce = true; return; }
+        if (state == null) return;
+        if (listCall != null) listCall.cancel();
+        loading = false;
+        nextPage = 1;
+        hasMore = true;
+        files.clear();
+        adapter.notifyDataSetChanged();
+        loadNext();
     }
 
     private void loadNext() {

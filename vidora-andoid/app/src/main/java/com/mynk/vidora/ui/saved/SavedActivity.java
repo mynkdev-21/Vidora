@@ -2,7 +2,8 @@ package com.mynk.vidora.ui.saved;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -20,6 +21,7 @@ public class SavedActivity extends AppCompatActivity {
 
     private SavedAdapter adapter;
     private BookmarkManager bookmarkManager;
+    private TextView empty;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +33,7 @@ public class SavedActivity extends AppCompatActivity {
         bookmarkManager = new BookmarkManager(this);
 
         RecyclerView recycler = findViewById(R.id.recycler_saved);
+        empty = findViewById(R.id.tv_empty);
         recycler.setLayoutManager(new LinearLayoutManager(this));
 
         List<BookmarkManager.BookmarkItem> bookmarks = bookmarkManager.getBookmarks();
@@ -40,6 +43,7 @@ public class SavedActivity extends AppCompatActivity {
             startActivity(intent);
         });
         recycler.setAdapter(adapter);
+        empty.setVisibility(bookmarks.isEmpty() ? View.VISIBLE : View.GONE);
 
         findViewById(R.id.btn_back).setOnClickListener(v -> finish());
     }
@@ -47,6 +51,9 @@ public class SavedActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        adapter.updateItems(bookmarkManager.getBookmarks());
+        if (adapter == null || bookmarkManager == null) return;
+        List<BookmarkManager.BookmarkItem> bookmarks = bookmarkManager.getBookmarks();
+        adapter.updateItems(bookmarks);
+        empty.setVisibility(bookmarks.isEmpty() ? View.VISIBLE : View.GONE);
     }
 }
