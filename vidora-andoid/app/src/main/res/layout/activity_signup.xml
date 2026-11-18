@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:fitsSystemWindows="true"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/bg_primary"
-    android:gravity="center_horizontal"
-    android:paddingTop="60dp"
-    android:paddingHorizontal="28dp"
-    android:paddingBottom="28dp">
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:fillViewport="true" android:background="@color/bg_primary">
+<LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:orientation="vertical" android:gravity="center_horizontal"
+    android:paddingTop="@dimen/space_6" android:paddingHorizontal="@dimen/content_gutter"
+    android:paddingBottom="@dimen/space_6">
 
     <!-- Logo -->
     <ImageView
@@ -17,7 +13,7 @@
         android:layout_height="48dp"
         android:src="@drawable/logo_wordmark"
         android:scaleType="fitCenter"
-        android:layout_marginBottom="50dp"
+        android:layout_marginBottom="@dimen/space_6"
         android:layout_gravity="center"
         android:contentDescription="Vidora" />
 
@@ -27,7 +23,7 @@
     android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Create account"
-        android:textSize="24sp"
+        android:textSize="30sp"
         android:textColor="@color/text_primary"
         android:fontFamily="sans-serif-medium"
         android:layout_marginBottom="6dp" />
@@ -64,7 +60,7 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="6dp" />
 
-    <EditText
+    <EditText style="@style/Vidora.Control.Input"
         android:id="@+id/et_name"
         android:fitsSystemWindows="true"
     android:layout_width="match_parent"
@@ -88,7 +84,7 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="6dp" />
 
-    <EditText
+    <EditText style="@style/Vidora.Control.Input"
         android:id="@+id/et_email"
         android:fitsSystemWindows="true"
     android:layout_width="match_parent"
@@ -112,7 +108,7 @@
         android:textColor="@color/text_primary"
         android:layout_marginBottom="6dp" />
 
-    <EditText
+    <EditText style="@style/Vidora.Control.Input"
         android:id="@+id/et_password"
         android:fitsSystemWindows="true"
     android:layout_width="match_parent"
@@ -129,6 +125,7 @@
     <!-- Signup button -->
     <TextView
         android:id="@+id/btn_signup"
+        style="@style/Vidora.Control.Primary"
         android:fitsSystemWindows="true"
     android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -156,10 +153,12 @@
     <TextView
         android:id="@+id/btn_go_login"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/touch_target"
+        android:gravity="center"
         android:text="Already have an account? Log in"
         android:textSize="13sp"
         android:textColor="@color/purple_light"
         android:layout_gravity="center" />
 
 </LinearLayout>
+</ScrollView>
